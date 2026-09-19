@@ -74,14 +74,22 @@ export class Matcher {
         ? preferUnseen(scored, this.#recent, this.#config.cooldownRounds)
         : scored;
 
-    const matches = cooled.slice(0, this.#config.topK).map((entry) => ({
+    // 絕對相似度在多維空間裡天生偏低且擠在一起（例如 62% vs 59%），
+    // 直接拿去畫 UI 會讓正確答案看起來像失敗。relative 是「在所有候選中的相對優勢」，
+    // 用 softmax 把彼此的差距拉開，才是適合顯示給使用者看的數字。
+    const relatives = softmax(cooled.map((e) => e.similarity), RELATIVE_SHARPNESS);
+
+    const matches = cooled.slice(0, this.#config.topK).map((entry, i) => ({
       ...entry.food,
       similarity: entry.similarity,
+      relative: relatives[i],
       distance: entry.distance,
       breakdown: entry.breakdown,
     }));
 
     const best = matches[0] ?? null;
+    // 與第二名的差距。太小代表這次判斷沒把握，UI 可以改用「你介於 A 和 B 之間」的說法
+    const margin = matches.length > 1 ? matches[0].similarity - matches[1].similarity : 1;
     if (best) {
       this.#recent.unshift(best.id);
       this.#recent = this.#recent.slice(0, this.#config.cooldownRounds);
@@ -91,6 +99,7 @@ export class Matcher {
     return {
       matches,
       best,
+      margin,
       confident: threshold == null || (best?.similarity ?? 0) >= threshold,
     };
   }
@@ -98,6 +107,21 @@ export class Matcher {
   reset() {
     this.#recent = [];
   }
+}
+
+/**
+ * 候選之間差距通常很小，用一般 softmax 幾乎會得到均分。
+ * 乘上這個倍率放大差異，數值越大越「敢」把第一名拉開。
+ */
+const RELATIVE_SHARPNESS = 12;
+
+function softmax(values, sharpness) {
+  if (values.length === 0) return [];
+  const max = Math.max(...values);
+  // 先減去最大值再取 exp，避免數值溢位
+  const exps = values.map((v) => Math.exp((v - max) * sharpness));
+  const sum = exps.reduce((a, b) => a + b, 0);
+  return exps.map((e) => e / sum);
 }
 
 /** 逐維度列出差距，由大到小排序——UI 想顯示「最關鍵的三個特徵」時直接取前三。 */

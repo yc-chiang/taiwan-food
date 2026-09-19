@@ -102,25 +102,37 @@ app.on('result', ({ best, matches, confident, features, audio }) => {
 
 ## 二、食物資料格式
 
-放進 `src/data/foods.js` 的 `foods` 陣列：
+### 兩種比對粒度
+
+比對可以在兩種層級進行，系統依資料自動決定，你不用改程式：
+
+- **氛圍分類層級**（目前狀態）：20 道食物分成 5 組，比對只分辨這 5 組，
+  命中後從該組的 4 道中隨機挑一道。目標值寫在 `src/data/vibe-groups.js` 的 `group.profile`。
+- **食物層級**：只要有任何一道食物填了自己的 `profile`，比對就改成直接在這些食物之間分勝負。
+  沒填 `profile` 的food 不參與。
+
+ASMR 的目標狀態是後者 —— 每道食物有自己的聲音指紋。
+
+### 食物欄位
+
+`src/data/foods.js` 裡每一道的格式：
 
 ```js
-export const foods = [
-  {
-    id: 'stinky-tofu',           // 必填，唯一
-    name: '臭豆腐',               // 必填
-    profile: {                   // 必填，值域 0~1，至少填 3 個維度
-      roughness: 0.9,
-      brightness: 0.35,
-      rhythm: 0.7,
-      tonality: 0.1,
-    },
-    description: '滾油裡滋滋作響', // 以下選填，原封不動帶到結果裡
-    image: './assets/stinky-tofu.jpg',
-    tags: ['夜市', '發酵'],
-    weight: 1,                   // >1 較容易被選中，預設 1
+{
+  id: 'stinky-tofu',              // 唯一識別
+  name: '臭豆腐',
+  nameEn: 'Stinky Tofu',
+  group: 4,                       // 所屬氛圍分類 1~5
+  emoji: '🧈',                     // 「食物樣子」的佔位
+  image: null,                    // 填上圖片路徑就會取代 emoji
+  asmr: '滾油劇烈滋滋、夾起瀝油',     // 聲音提示，方便對照著填 profile
+  profile: {                      // ← 你要填的；null 表示不參與食物層級比對
+    roughness: 0.95,
+    brightness: 0.6,
+    rhythm: 0.4,
+    tonality: 0.05,
   },
-];
+}
 ```
 
 ### 十二個維度

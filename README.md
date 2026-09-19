@@ -5,6 +5,9 @@
 目前這個 repo 包含**完整的核心邏輯**：麥克風連接、即時音訊處理、聲音特徵抽取與比對引擎。
 **互動介面與食物清單尚未加入**，兩者的接口都已預留好。
 
+**概念**：ASMR。對著麥克風發出不同的聲音（油炸、咀嚼、湯汁、剪刀…），
+系統判斷這是哪一道台灣小吃的聲音，把那道食物的樣子跑出來。
+
 ## 現在有什麼
 
 ```
@@ -28,16 +31,29 @@ src/
 │   ├── distance.js           歐式／曼哈頓／餘弦
 │   ├── feature-space.js      12 個維度的定義
 │   └── schema.js             食物資料驗證
-└── data/foods.js             ← 食物清單（待填）
+└── data/
+    ├── foods.js              20 道食物（profile 待填）
+    └── vibe-groups.js        5 個氛圍分類
 
-dev/harness.html              除錯測試台
+index.html                    測試介面（一顆按鈕）
+dev/harness.html              工程除錯台
 docs/INTEGRATION.md           串接說明與資料格式
 ```
 
 ## 還缺什麼
 
-1. **食物清單** → 填進 `src/data/foods.js`，格式見 `docs/INTEGRATION.md`
-2. **互動介面** → 新建 `index.html`，訂閱 `app.js` 的事件即可
+1. **各食物的 profile** → 在 `src/data/foods.js` 幫食物填上 `profile`
+2. **食物圖片** → 目前用 emoji 佔位，填 `image` 欄位即可換成實際圖片
+3. **正式介面** → 現在的 `index.html` 是測試用的最小版本
+
+### 比對粒度會自動切換
+
+| 資料狀態 | 比對方式 |
+|---|---|
+| 沒有任何食物填 `profile`（目前） | 先判 5 個氛圍分類，再從該組 4 道隨機挑一道 |
+| 有食物填了 `profile` | 直接在這些食物之間分勝負 |
+
+切換是自動的 —— 你填完 `profile` 之後，不需要改任何一行程式碼。
 
 ## 怎麼運作
 

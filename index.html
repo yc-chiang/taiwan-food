@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>台灣味・聲音測試</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --surface: #181b22;
+    --line: #272b35;
+    --text: #e8eaf0;
+    --muted: #8b93a7;
+    --accent: #ffb454;
+    --accent-dim: #4a3520;
+    --danger: #ff7a6b;
+    --ok: #6ee7a8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px 16px 48px;
+    min-height: 100dvh;
+    font-family: -apple-system, BlinkMacSystemFont, "Noto Sans TC", "PingFang TC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+  .wrap { width: 100%; max-width: 420px; }
+  header { text-align: center; margin-bottom: 4px; }
+  h1 { font-size: 18px; font-weight: 600; margin: 0 0 4px; letter-spacing: .02em; }
+  .sub { font-size: 12px; color: var(--muted); }
+
+  /* 模式切換 */
+  .modes { display: flex; gap: 4px; padding: 4px; background: var(--surface);
+           border: 1px solid var(--line); border-radius: 999px; }
+  .modes button { flex: 1; padding: 8px 12px; font: inherit; font-size: 13px;
+                  border: 0; border-radius: 999px; background: transparent;
+                  color: var(--muted); cursor: pointer; transition: .15s; }
+  .modes button[aria-pressed="true"] { background: var(--accent-dim); color: var(--accent); }
+
+  /* 主按鈕 */
+  .mic-area { display: flex; flex-direction: column; align-items: center; gap: 14px;
+              padding: 28px 0 8px; }
+  #mic {
+    width: 132px; height: 132px; border-radius: 50%;
+    border: 2px solid var(--line); background: var(--surface); color: var(--text);
+    font: inherit; font-size: 15px; font-weight: 500; cursor: pointer;
+    display: grid; place-items: center; gap: 2px;
+    transition: transform .12s, border-color .2s, background .2s;
+    position: relative;
+  }
+  #mic:active { transform: scale(.96); }
+  #mic:disabled { opacity: .45; cursor: not-allowed; }
+  #mic[data-state="recording"] { border-color: var(--accent); background: var(--accent-dim); color: var(--accent); }
+  /* 音量光暈：用 box-shadow 的擴散半徑呈現即時音量 */
+  #mic[data-state="recording"]::after {
+    content: ''; position: absolute; inset: -2px; border-radius: 50%;
+    box-shadow: 0 0 0 var(--glow, 0px) rgba(255,180,84,.18);
+    transition: box-shadow .08s linear; pointer-events: none;
+  }
+  .hint { font-size: 12px; color: var(--muted); min-height: 18px; text-align: center; }
+
+  /* 音量條 */
+  .meter { width: 100%; height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; }
+  .meter i { display: block; height: 100%; width: 0%; background: var(--accent);
+             transition: width .08s linear; }
+
+  /* 結果卡 */
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+          padding: 24px 20px 20px; text-align: center; animation: rise .35s ease-out; }
+  .card[hidden] { display: none; }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+  /* 食物「樣子」：目前是 emoji 佔位，換成實際圖片時直接改成 <img> */
+  .face { width: 104px; height: 104px; margin: 0 auto 14px; border-radius: 50%;
+          background: #0a0c10; border: 1px solid var(--line);
+          display: grid; place-items: center; font-size: 52px; line-height: 1; }
+  .face img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+  .vibe { font-size: 12px; color: var(--accent); letter-spacing: .08em; margin-bottom: 10px; }
+  .food { font-size: 30px; font-weight: 600; margin: 0 0 2px; }
+  .asmr { font-size: 12px; color: var(--muted); margin-top: 10px; }
+  .asmr b { color: var(--accent); font-weight: 500; }
+  .food-en { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+  .feeling { font-size: 13px; color: var(--muted); line-height: 1.7; text-align: left;
+             border-top: 1px solid var(--line); padding-top: 14px; }
+  .feeling b { color: var(--text); font-weight: 500; }
+
+  /* 狀態與除錯 */
+  .status { font-size: 11px; color: var(--muted); text-align: center; }
+  .status.err { color: var(--danger); }
+  details { margin-top: 4px; }
+  summary { font-size: 12px; color: var(--muted); cursor: pointer; padding: 6px 0; }
+  pre { font-size: 11px; line-height: 1.6; background: #0a0c10; border: 1px solid var(--line);
+        border-radius: 8px; padding: 12px; overflow-x: auto; color: var(--muted);
+        white-space: pre-wrap; margin: 6px 0 0; }
+  select { width: 100%; font: inherit; font-size: 12px; padding: 8px 10px; margin-top: 6px;
+           background: #0a0c10; color: var(--muted); border: 1px solid var(--line);
+           border-radius: 8px; }
+  audio { width: 100%; margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>台灣味・聲音測試</h1>
+    <div class="sub">發出聲音，跑出對應的台灣小吃</div>
+  </header>
+</div>
+
+<div class="wrap modes" role="group" aria-label="模式">
+  <button id="mode-random" aria-pressed="true">隨機模式</button>
+  <button id="mode-match" aria-pressed="false">比對模式</button>
+</div>
+
+<div class="wrap mic-area">
+  <button id="mic" data-state="idle">
+    <span id="mic-label">開始收音</span>
+  </button>
+  <div class="meter"><i id="meter-bar"></i></div>
+  <div class="hint" id="hint">第一次會詢問麥克風權限</div>
+</div>
+
+<div class="wrap">
+  <div class="card" id="result" hidden>
+    <div class="face" id="r-face"></div>
+    <div class="vibe" id="r-vibe"></div>
+    <p class="food" id="r-food"></p>
+    <div class="food-en" id="r-food-en"></div>
+    <div class="asmr" id="r-asmr"></div>
+    <div class="feeling" id="r-feeling"></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="status" id="status">尚未連接麥克風</div>
+  <details>
+    <summary>除錯資訊</summary>
+    <select id="devices" disabled><option>尚未授權</option></select>
+    <audio id="playback" controls hidden></audio>
+    <pre id="debug">—</pre>
+  </details>
+</div>
+
+<script type="module">
+import { createFoodVoiceMatcher, State } from './src/app.js';
+import {
+  randomFood, pickFoodFromGroup, foodById,
+  foodsAsMatchItems, matchGranularity,
+} from './src/data/foods.js';
+import { groupsAsMatchItems } from './src/data/vibe-groups.js';
+
+const $ = (id) => document.getElementById(id);
+
+/**
+ * 測試階段用手動模式：一顆按鈕控制開始與結束，不啟用 VAD 自動斷句。
+ * 最長 15 秒是保險，避免忘記按停止。
+ */
+const app = createFoodVoiceMatcher({
+  vad: { enabled: false },
+  recording: { maxDurationMs: 15000 },
+});
+
+/**
+ * 比對粒度會依資料自動決定：
+ *   有食物填了 profile → 直接在食物之間比（ASMR 的目標狀態）
+ *   還沒有任何 profile → 先判 5 個氛圍分類，再從該組挑一道
+ * 你在 src/data/foods.js 幫食物填上 profile 之後，這裡不用改任何一行。
+ */
+const granularity = matchGranularity();
+app.loadFoods(granularity === 'food' ? foodsAsMatchItems() : groupsAsMatchItems());
+
+let mode = 'random';   // 'random' | 'match'
+let connected = false;
+
+// ---------------------------------------------------------------- 模式切換
+function setMode(next) {
+  mode = next;
+  $('mode-random').setAttribute('aria-pressed', String(next === 'random'));
+  $('mode-match').setAttribute('aria-pressed', String(next === 'match'));
+  $('hint').textContent =
+    next === 'random'
+      ? '錄音流程照跑，結果隨機給一道（測試用）'
+      : granularity === 'food'
+        ? '依聲音特徵直接比對 20 道食物'
+        : '依聲音特徵判定氛圍分類，再從該組挑一道';
+}
+$('mode-random').onclick = () => setMode('random');
+$('mode-match').onclick = () => setMode('match');
+
+// ---------------------------------------------------------------- 環境檢查
+const support = app.support;
+if (!support.supported) {
+  $('mic').disabled = true;
+  $('status').classList.add('err');
+  $('status').textContent =
+    support.issues[0] === 'INSECURE_CONTEXT'
+      ? '需要 HTTPS 或 localhost 才能使用麥克風'
+      : '這個瀏覽器不支援錄音';
+}
+$('debug').textContent = JSON.stringify(support, null, 1);
+
+// ---------------------------------------------------------------- 狀態 → UI
+const LABELS = {
+  [State.IDLE]: '開始收音',
+  [State.CONNECTING]: '連接中…',
+  [State.READY]: '開始收音',
+  [State.RECORDING]: '結束收音',
+  [State.ANALYZING]: '分析中…',
+  [State.RESULT]: '再錄一次',
+  [State.ERROR]: '重試',
+};
+
+app.on('state', ({ to, context }) => {
+  $('mic-label').textContent = LABELS[to] ?? to;
+  $('mic').dataset.state = to;
+  $('mic').disabled = to === State.CONNECTING || to === State.ANALYZING;
+  if (to !== State.RECORDING) {
+    $('meter-bar').style.width = '0%';
+    $('mic').style.setProperty('--glow', '0px');
+  }
+  if (to === State.RECORDING) {
+    $('status').classList.remove('err');
+    $('status').textContent = '收音中…';
+  }
+  if (context.reason) $('status').textContent = `已停止（${context.reason}）`;
+});
+
+app.on('progress', ({ elapsedMs }) => {
+  $('status').textContent = `收音中… ${(elapsedMs / 1000).toFixed(1)} 秒`;
+});
+
+// 音量回饋：dB 轉成 0~100 的視覺尺度（-60dB 當底，-10dB 當滿）
+app.on('level', ({ db }) => {
+  if (app.state !== State.RECORDING) return;
+  const pct = Math.max(0, Math.min(100, ((db + 60) / 50) * 100));
+  $('meter-bar').style.width = pct + '%';
+  $('mic').style.setProperty('--glow', (pct * 0.18).toFixed(1) + 'px');
+});
+
+app.on('devices', ({ devices, activeDeviceId }) => {
+  $('devices').disabled = devices.length < 2;
+  $('devices').innerHTML = devices
+    .map((d) => `<option value="${d.deviceId}"${d.deviceId === activeDeviceId ? ' selected' : ''}>${d.label}</option>`)
+    .join('');
+});
+$('devices').onchange = (e) => {
+  app.switchDevice(e.target.value).catch((err) => showError(err));
+};
+
+app.on('interrupted', ({ muted }) => {
+  if (muted) showError({ messageZh: '麥克風被其他程式中斷，請重新開始' });
+});
+
+app.on('error', showError);
+
+function showError(err) {
+  $('status').classList.add('err');
+  $('status').textContent = err.messageZh ?? String(err);
+}
+
+// ---------------------------------------------------------------- 結果
+app.on('result', ({ best, matches, features, audio }) => {
+  // 兩種模式都完整跑過收音與特徵抽取，差別只在最後怎麼決定答案
+  let food;
+  let pickMethod = 'random';
+  if (mode === 'random') {
+    food = randomFood();
+  } else if (granularity === 'food') {
+    food = foodById(best.id) ?? randomFood();
+    pickMethod = 'food-profile';
+  } else {
+    const picked = pickFoodFromGroup(best.meta.groupId, features.vector);
+    food = picked.food;
+    pickMethod = picked.method;
+  }
+
+  // 食物「樣子」：有圖片就用圖片，否則用 emoji 佔位
+  $('r-face').innerHTML = food.image
+    ? `<img src="${food.image}" alt="${food.name}" />`
+    : food.emoji;
+  $('r-vibe').textContent = food.vibe ? `${food.vibe.name} · ${food.vibe.nameEn}` : '';
+  $('r-food').textContent = food.name;
+  $('r-food-en').textContent = food.nameEn;
+  $('r-asmr').innerHTML = food.asmr ? `<b>聲音</b>　${food.asmr}` : '';
+  $('r-feeling').textContent = food.vibe ? food.vibe.feeling : '';
+  $('result').hidden = false;
+
+  $('status').classList.remove('err');
+  const secs = audio ? (audio.durationMs / 1000).toFixed(1) : '?';
+  const how = { random: '組內隨機', profile: '組內依 profile', 'food-profile': '食物層級比對' }[pickMethod];
+  $('status').textContent =
+    mode === 'random'
+      ? `錄音 ${secs} 秒・結果為隨機`
+      : `錄音 ${secs} 秒・判定「${best.name}」・${how}`;
+
+  if (audio) {
+    $('playback').src = URL.createObjectURL(audio.blob);
+    $('playback').hidden = false;
+  }
+
+  const ranking = matches
+    .map((m, i) => `  ${i + 1}. ${m.name}  相對 ${(m.relative * 100).toFixed(1)}%　(絕對 ${(m.similarity * 100).toFixed(1)}%)`)
+    .join('\n');
+  const vector = Object.entries(features.vector)
+    .map(([k, v]) => `  ${k.padEnd(12)} ${'█'.repeat(Math.round(v * 20)).padEnd(20, '·')} ${v.toFixed(2)}`)
+    .join('\n');
+  $('debug').textContent =
+    `模式：${mode === 'random' ? '隨機' : '比對'}　粒度：${granularity === 'food' ? '食物' : '氛圍分類'}　選法：${how}\n` +
+    `取樣率：${features.meta.sampleRate} Hz・有效幀 ${features.meta.voicedFrames}\n\n` +
+    `${granularity === 'food' ? '食物' : '氛圍分類'}排名：\n${ranking}\n\n特徵向量：\n${vector}`;
+});
+
+// ---------------------------------------------------------------- 主按鈕
+// connect() 必須在 click handler 裡直接呼叫，Safari／iOS 才會放行麥克風
+$('mic').onclick = async () => {
+  try {
+    if (app.state === State.RECORDING) {
+      await app.stop();
+      return;
+    }
+    $('result').hidden = true;
+    $('playback').hidden = true;
+    if (!connected) {
+      $('status').textContent = '等待麥克風授權…';
+      const info = await app.connect();
+      connected = true;
+      $('status').textContent = `已連接・${info.sampleRate} Hz`;
+    }
+    await app.start();
+  } catch (err) {
+    showError(err);
+  }
+};
+
+setMode('random');
+</script>
+</body>
+</html>
