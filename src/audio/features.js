@@ -59,7 +59,7 @@ export function extractFeatures(samples, sampleRate) {
     rolloffSeq.push(spectralRolloff(spectrum, sampleRate, 0.85));
     flatnessSeq.push(spectralFlatness(spectrum));
     if (prevSpectrum) fluxSeq.push(spectralFlux(spectrum, prevSpectrum));
-    prevSpectrum = Float32Array.from(spectrum);
+    prevSpectrum = spectrum.slice();
 
     const f0 = estimatePitch(trimmed, offset, FRAME_SIZE, sampleRate);
     if (f0) f0Seq.push(f0);
@@ -68,6 +68,8 @@ export function extractFeatures(samples, sampleRate) {
   const voicedRatio = rmsSeq.length ? zcrSeq.length / rmsSeq.length : 0;
   const loudFrames = rmsSeq.filter((r) => r >= SILENCE_RMS);
   const rmsDb = loudFrames.map((r) => 20 * Math.log10(r));
+
+  const rises = rmsRiseDb(rmsSeq);
 
   const raw = {
     durationSec,
@@ -79,13 +81,15 @@ export function extractFeatures(samples, sampleRate) {
     rolloffHz: mean(rolloffSeq),
     flatness: mean(flatnessSeq),
     zcr: mean(zcrSeq),
-    onsetRate: countOnsets(fluxSeq) / Math.max(durationSec, 0.001),
+    onsetRate: countOnsets(rises) / Math.max(durationSec, 0.001),
+    transientDb: transientDb(rises),
+    fluxMean: mean(fluxSeq),
     f0Hz: median(f0Seq),
     f0SemitoneStd: f0Seq.length > 1 ? std(f0Seq.map((f) => 12 * Math.log2(f / 55))) : 0,
     /** 有明確基頻的幀佔比，用來分辨「哼唱」與「噪音」 */
     harmonicRatio: zcrSeq.length ? f0Seq.length / zcrSeq.length : 0,
     voicedRatio,
-    attackSec: attackTime(rmsSeq, sampleRate),
+
     sustainRatio: sustainRatio(rmsSeq),
   };
 
@@ -95,12 +99,14 @@ export function extractFeatures(samples, sampleRate) {
     dynamics: normalize(raw.rmsDbStd, 0, 14),
     pitch: normalizeLog(raw.f0Hz, 70, 800),
     pitchRange: normalize(raw.f0SemitoneStd, 0, 10),
-    brightness: normalizeLog(raw.centroidHz, 180, 6000),
-    roughness: normalize(raw.flatness, 0.02, 0.45),
-    sharpness: normalize(raw.zcr, 0.01, 0.3),
-    rhythm: normalize(raw.onsetRate, 0.3, 7),
+    // 上下界依實測校正：一般人對著麥克風發出的聲音，頻譜重心可達 12kHz，
+    // 原本 6000 的上界會讓所有噪音類（酥脆／油炸／沙沙）全部壓在 1.00 而分不開
+    brightness: normalizeLog(raw.centroidHz, 150, 13000),
+    roughness: normalize(raw.flatness, 0.01, 0.85),
+    sharpness: normalize(raw.zcr, 0.005, 0.55),
+    rhythm: normalize(raw.onsetRate, 0.3, 8),
     duration: normalize(raw.durationSec, 0.2, 4),
-    attack: normalize(0.3 - raw.attackSec, 0, 0.3),
+    attack: normalize(raw.transientDb, 1, 14),
     sustain: clamp01(raw.sustainRatio),
     tonality: clamp01(raw.harmonicRatio),
   };
@@ -170,16 +176,14 @@ function spectralFlatness(spectrum) {
 }
 
 /**
- * 頻譜變化量，用來偵測 onset（新的一下敲擊／音節）。
- * 除以當下總能量做正規化，否則音量大的錄音 flux 天生就高，門檻無法跨錄音共用；
- * 穩態長音的正規化 flux 會趨近 0，正是我們要的。
+ * 頻譜變化量。保留給未來可能的音色變化分析，目前 onset 偵測已改用 RMS 包絡。
  */
 function spectralFlux(current, previous) {
   let sum = 0;
   let total = 0;
   for (let i = 1; i < current.length; i += 1) {
     const diff = current[i] - previous[i];
-    if (diff > 0) sum += diff; // 只看能量增加（half-wave rectify）
+    if (diff > 0) sum += diff;
     total += current[i];
   }
   return total > 0 ? sum / total : 0;
@@ -187,22 +191,52 @@ function spectralFlux(current, previous) {
 
 /** onset 之間至少要隔這麼多幀（約 50ms），避免同一下被算成兩次 */
 const MIN_ONSET_GAP_FRAMES = 5;
-/** 正規化 flux 的絕對下限。穩態音的 flux 幾乎是 0，沒有這道底線會把數值雜訊當成節奏。 */
-const MIN_ONSET_FLUX = 0.06;
+/** 音量至少要在一幀內跳升這麼多 dB 才算一次 onset */
+const ONSET_RISE_DB = 5;
 
-function countOnsets(fluxSeq) {
-  if (fluxSeq.length < 3) return 0;
-  const threshold = Math.max(mean(fluxSeq) + std(fluxSeq) * 0.8, MIN_ONSET_FLUX);
+/**
+ * 逐幀的音量上升量（dB）。這是節奏與起音兩個特徵的共同基礎。
+ *
+ * 為什麼不用頻譜變化（spectral flux）：白噪音的頻譜每一幀都在隨機跳動，
+ * flux 天生就很高，結果「持續的嘶嘶聲」會被判成節奏密度最高的聲音，
+ * 和實際感受完全相反。音量包絡沒有這個問題 —— 穩態噪音的音量幾乎不變。
+ */
+function rmsRiseDb(rmsSeq) {
+  const rises = [];
+  for (let i = 1; i < rmsSeq.length; i += 1) {
+    const prev = 20 * Math.log10(Math.max(rmsSeq[i - 1], 1e-6));
+    const cur = 20 * Math.log10(Math.max(rmsSeq[i], 1e-6));
+    rises.push(Math.max(0, cur - prev));
+  }
+  return rises;
+}
+
+/** 從音量上升序列數出 onset 次數。 */
+function countOnsets(rises) {
+  if (rises.length < 3) return 0;
   let count = 0;
   let lastOnset = -MIN_ONSET_GAP_FRAMES;
-  for (let i = 1; i < fluxSeq.length - 1; i += 1) {
-    const isLocalPeak = fluxSeq[i] >= fluxSeq[i - 1] && fluxSeq[i] > fluxSeq[i + 1];
-    if (isLocalPeak && fluxSeq[i] > threshold && i - lastOnset >= MIN_ONSET_GAP_FRAMES) {
+  for (let i = 1; i < rises.length - 1; i += 1) {
+    const isPeak = rises[i] >= rises[i - 1] && rises[i] > rises[i + 1];
+    if (isPeak && rises[i] >= ONSET_RISE_DB && i - lastOnset >= MIN_ONSET_GAP_FRAMES) {
       count += 1;
       lastOnset = i;
     }
   }
   return count;
+}
+
+/**
+ * 起音銳利度：音量上升量的第 90 百分位。
+ * 持續的噪音每幀只升 1~2 dB；爆裂聲一下就升 15 dB 以上。
+ * 取百分位而非最大值，才不會被單一異常幀決定整段的判斷。
+ */
+function transientDb(rises) {
+  if (rises.length === 0) return 0;
+  // 用第 98 而非第 90 百分位：onset 在一段錄音裡本來就稀疏
+  // （3 秒約 280 幀、可能只有 20 次爆裂），取 90% 會整個落在非 onset 的平緩區
+  const sorted = [...rises].sort((a, b) => a - b);
+  return sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.98))];
 }
 
 /**
@@ -260,15 +294,6 @@ function estimatePitch(samples, offset, size, sampleRate) {
   const refined = chosen + (Math.abs(shift) < 1 ? shift : 0);
 
   return sampleRate / refined;
-}
-
-/** 從開始到到達峰值音量所需時間 */
-function attackTime(rmsSeq, sampleRate) {
-  if (rmsSeq.length === 0) return 0.3;
-  const peak = Math.max(...rmsSeq);
-  if (peak <= 0) return 0.3;
-  const peakIndex = rmsSeq.indexOf(peak);
-  return (peakIndex * HOP_SIZE) / sampleRate;
 }
 
 /** 峰值之後仍維持在 50% 音量以上的比例，代表尾音綿不綿長 */
