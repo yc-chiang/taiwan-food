@@ -27,38 +27,43 @@ import { DEFAULT_WEIGHTS } from '../match/feature-space.js';
  *   · 只填一部分食物也可以，沒填的就不參與食物層級比對
  *
  * `asmr` 欄位是我先擬的聲音提示，方便你對照著填 profile，可自由改寫或刪除。
- * `emoji` 是「食物樣子」的暫時佔位，之後換成 `image` 的實際圖片。
+ *
+ * ── 食物的樣子 ──
+ * `stage` 指向完整的舞台圖：食物長在人體胃部、和背景同一種霓虹熱感畫風的那張。
+ * 檔案放到 assets/foods/<id>.jpg 就會自動生效，不需要改任何程式碼。
+ * 圖還沒放進去的食物會自動退回粒子渲染（用 emoji 的形狀聚合成霓虹粒子），
+ * 所以可以一張一張慢慢補，不必等 20 張都齊了才能測。
  */
 export const foods = [
   // ── 1 · 溫暖療癒 ──────────────────────────────────────────
-  { id: 'beef-noodle-soup', sound: 'liquid',  name: '牛肉麵',   nameEn: 'Taiwanese Beef Noodle Soup', group: 1, emoji: '🍜', image: null, asmr: '吸麵條、湯汁滾動',       profile: null },
-  { id: 'braised-pork-rice', sound: 'soft', name: '滷肉飯',   nameEn: 'Braised Pork Rice',          group: 1, emoji: '🍚', image: null, asmr: '湯匙刮碗、黏稠拌攪',     profile: null },
-  { id: 'oyster-vermicelli', sound: 'liquid', name: '蚵仔麵線', nameEn: 'Oyster Vermicelli',          group: 1, emoji: '🍲', image: null, asmr: '濃稠羹湯、小口吸食',     profile: null },
-  { id: 'danzai-noodles', sound: 'liquid',    name: '擔仔麵',   nameEn: 'Danzai Noodles',             group: 1, emoji: '🍜', image: null, asmr: '小碗輕碰、清湯',         profile: null },
+  { id: 'beef-noodle-soup', stage: 'assets/foods/beef-noodle-soup.jpg', sound: 'liquid',  name: '牛肉麵',   nameEn: 'Taiwanese Beef Noodle Soup', group: 1, emoji: '🍜', image: null, asmr: '吸麵條、湯汁滾動',       profile: null },
+  { id: 'braised-pork-rice', stage: 'assets/foods/braised-pork-rice.jpg', sound: 'soft', name: '滷肉飯',   nameEn: 'Braised Pork Rice',          group: 1, emoji: '🍚', image: null, asmr: '湯匙刮碗、黏稠拌攪',     profile: null },
+  { id: 'oyster-vermicelli', stage: 'assets/foods/oyster-vermicelli.jpg', sound: 'liquid', name: '蚵仔麵線', nameEn: 'Oyster Vermicelli',          group: 1, emoji: '🍲', image: null, asmr: '濃稠羹湯、小口吸食',     profile: null },
+  { id: 'danzai-noodles', stage: 'assets/foods/danzai-noodles.jpg', sound: 'liquid',    name: '擔仔麵',   nameEn: 'Danzai Noodles',             group: 1, emoji: '🍜', image: null, asmr: '小碗輕碰、清湯',         profile: null },
 
   // ── 2 · 溫馨相聚 ──────────────────────────────────────────
-  { id: 'soup-dumplings', sound: 'liquid',    name: '小籠包',   nameEn: 'Soup Dumplings',             group: 2, emoji: '🥟', image: null, asmr: '咬破麵皮、吸湯汁',       profile: null },
-  { id: 'pork-belly-bun', sound: 'soft',    name: '刈包',     nameEn: 'Taiwanese Pork Belly Bun',   group: 2, emoji: '🥪', image: null, asmr: '鬆軟麵皮、花生粉',       profile: null },
-  { id: 'three-cup-chicken', sound: 'sizzling', name: '三杯雞',   nameEn: 'Three-Cup Chicken',          group: 2, emoji: '🍗', image: null, asmr: '砂鍋翻炒、九層塔下鍋',   profile: null },
-  { id: 'taiwanese-sausage', sound: 'sizzling', name: '台灣香腸', nameEn: 'Taiwanese Sausage',          group: 2, emoji: '🌭', image: null, asmr: '炭烤滋滋、咬下爆汁',     profile: null },
+  { id: 'soup-dumplings', stage: 'assets/foods/soup-dumplings.jpg', sound: 'liquid',    name: '小籠包',   nameEn: 'Soup Dumplings',             group: 2, emoji: '🥟', image: null, asmr: '咬破麵皮、吸湯汁',       profile: null },
+  { id: 'pork-belly-bun', stage: 'assets/foods/pork-belly-bun.jpg', sound: 'soft',    name: '刈包',     nameEn: 'Taiwanese Pork Belly Bun',   group: 2, emoji: '🥪', image: null, asmr: '鬆軟麵皮、花生粉',       profile: null },
+  { id: 'three-cup-chicken', stage: 'assets/foods/three-cup-chicken.jpg', sound: 'sizzling', name: '三杯雞',   nameEn: 'Three-Cup Chicken',          group: 2, emoji: '🍗', image: null, asmr: '砂鍋翻炒、九層塔下鍋',   profile: null },
+  { id: 'taiwanese-sausage', stage: 'assets/foods/taiwanese-sausage.jpg', sound: 'sizzling', name: '台灣香腸', nameEn: 'Taiwanese Sausage',          group: 2, emoji: '🌭', image: null, asmr: '炭烤滋滋、咬下爆汁',     profile: null },
 
   // ── 3 · 熱鬧夜市 ──────────────────────────────────────────
-  { id: 'oyster-omelet', sound: 'sizzling',     name: '蚵仔煎',   nameEn: 'Oyster Omelet',              group: 3, emoji: '🍳', image: null, asmr: '鐵板煎、鍋鏟刮動',       profile: null },
-  { id: 'fried-chicken', sound: 'crispy',     name: '鹽酥雞',   nameEn: 'Taiwanese Fried Chicken',    group: 3, emoji: '🍗', image: null, asmr: '下油鍋爆響、酥脆咀嚼',   profile: null },
-  { id: 'scallion-pancake', sound: 'crispy',  name: '蔥油餅',   nameEn: 'Scallion Pancake',           group: 3, emoji: '🫓', image: null, asmr: '煎餅翻面、撕開酥層',     profile: null },
-  { id: 'pepper-bun', sound: 'crispy',        name: '胡椒餅',   nameEn: 'Pepper Bun',                 group: 3, emoji: '🥟', image: null, asmr: '窯烤硬殼、咬碎脆皮',     profile: null },
+  { id: 'oyster-omelet', stage: 'assets/foods/oyster-omelet.jpg', sound: 'sizzling',     name: '蚵仔煎',   nameEn: 'Oyster Omelet',              group: 3, emoji: '🍳', image: null, asmr: '鐵板煎、鍋鏟刮動',       profile: null },
+  { id: 'fried-chicken', stage: 'assets/foods/fried-chicken.jpg', sound: 'crispy',     name: '鹽酥雞',   nameEn: 'Taiwanese Fried Chicken',    group: 3, emoji: '🍗', image: null, asmr: '下油鍋爆響、酥脆咀嚼',   profile: null },
+  { id: 'scallion-pancake', stage: 'assets/foods/scallion-pancake.jpg', sound: 'crispy',  name: '蔥油餅',   nameEn: 'Scallion Pancake',           group: 3, emoji: '🫓', image: null, asmr: '煎餅翻面、撕開酥層',     profile: null },
+  { id: 'pepper-bun', stage: 'assets/foods/pepper-bun.jpg', sound: 'crispy',        name: '胡椒餅',   nameEn: 'Pepper Bun',                 group: 3, emoji: '🥟', image: null, asmr: '窯烤硬殼、咬碎脆皮',     profile: null },
 
   // ── 4 · 大膽冒險 ──────────────────────────────────────────
-  { id: 'stinky-tofu', sound: 'sizzling',       name: '臭豆腐',   nameEn: 'Stinky Tofu',                group: 4, emoji: '🧈', image: null, asmr: '滾油劇烈滋滋、夾起瀝油', profile: null },
-  { id: 'pigs-blood-cake', sound: 'chewy',   name: '豬血糕',   nameEn: "Pig's Blood Cake",           group: 4, emoji: '🍡', image: null, asmr: '黏糯咀嚼、沾花生粉',     profile: null },
-  { id: 'sausage-in-sausage', sound: 'crispy',name: '大腸包小腸', nameEn: 'Small Sausage in Large Sausage', group: 4, emoji: '🌭', image: null, asmr: '剪刀剪斷、炭烤爆皮', profile: null },
-  { id: 'iron-eggs', sound: 'chewy',         name: '鐵蛋',     nameEn: 'Iron Eggs',                  group: 4, emoji: '🥚', image: null, asmr: '硬韌咀嚼、緊實有嚼勁',   profile: null },
+  { id: 'stinky-tofu', stage: 'assets/foods/stinky-tofu.jpg', sound: 'sizzling',       name: '臭豆腐',   nameEn: 'Stinky Tofu',                group: 4, emoji: '🧈', image: null, asmr: '滾油劇烈滋滋、夾起瀝油', profile: null },
+  { id: 'pigs-blood-cake', stage: 'assets/foods/pigs-blood-cake.jpg', sound: 'chewy',   name: '豬血糕',   nameEn: "Pig's Blood Cake",           group: 4, emoji: '🍡', image: null, asmr: '黏糯咀嚼、沾花生粉',     profile: null },
+  { id: 'sausage-in-sausage', stage: 'assets/foods/sausage-in-sausage.jpg', sound: 'crispy',name: '大腸包小腸', nameEn: 'Small Sausage in Large Sausage', group: 4, emoji: '🌭', image: null, asmr: '剪刀剪斷、炭烤爆皮', profile: null },
+  { id: 'iron-eggs', stage: 'assets/foods/iron-eggs.jpg', sound: 'chewy',         name: '鐵蛋',     nameEn: 'Iron Eggs',                  group: 4, emoji: '🥚', image: null, asmr: '硬韌咀嚼、緊實有嚼勁',   profile: null },
 
   // ── 5 · 甜蜜夢幻 ──────────────────────────────────────────
-  { id: 'pineapple-cake', sound: 'grainy',    name: '鳳梨酥',   nameEn: 'Pineapple Cake',             group: 5, emoji: '🍍', image: null, asmr: '拆紙盒、酥鬆碎屑',       profile: null },
-  { id: 'taro-balls', sound: 'chewy',        name: '芋圓',     nameEn: 'Taro Balls',                 group: 5, emoji: '🍡', image: null, asmr: 'Q 彈咀嚼、冰塊碰撞',     profile: null },
-  { id: 'shaved-ice', sound: 'grainy',        name: '刨冰',     nameEn: 'Taiwanese Shaved Ice',       group: 5, emoji: '🍧', image: null, asmr: '刨冰機沙沙、湯匙挖冰',   profile: null },
-  { id: 'wheel-cake', sound: 'soft',        name: '車輪餅',   nameEn: 'Wheel Cake',                 group: 5, emoji: '🥮', image: null, asmr: '烤模扣出、綿密內餡',     profile: null },
+  { id: 'pineapple-cake', stage: 'assets/foods/pineapple-cake.jpg', sound: 'grainy',    name: '鳳梨酥',   nameEn: 'Pineapple Cake',             group: 5, emoji: '🍍', image: null, asmr: '拆紙盒、酥鬆碎屑',       profile: null },
+  { id: 'taro-balls', stage: 'assets/foods/taro-balls.jpg', sound: 'chewy',        name: '芋圓',     nameEn: 'Taro Balls',                 group: 5, emoji: '🍡', image: null, asmr: 'Q 彈咀嚼、冰塊碰撞',     profile: null },
+  { id: 'shaved-ice', stage: 'assets/foods/shaved-ice.jpg', sound: 'grainy',        name: '刨冰',     nameEn: 'Taiwanese Shaved Ice',       group: 5, emoji: '🍧', image: null, asmr: '刨冰機沙沙、湯匙挖冰',   profile: null },
+  { id: 'wheel-cake', stage: 'assets/foods/wheel-cake.jpg', sound: 'soft',        name: '車輪餅',   nameEn: 'Wheel Cake',                 group: 5, emoji: '🥮', image: null, asmr: '烤模扣出、綿密內餡',     profile: null },
 ];
 
 /** 取得某個氛圍分類底下的所有食物。 */
