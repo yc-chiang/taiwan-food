@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>除錯測試台 — 麥克風與比對邏輯</title>
+<style>
+  /* 刻意保持樸素：這是工程用的除錯台，不是產品介面。
+     正式的互動介面請另外建立 index.html，不要改這一頁。 */
+  body { font: 14px/1.6 -apple-system, "Noto Sans TC", sans-serif; margin: 0; padding: 16px;
+         max-width: 720px; margin-inline: auto; background: #111; color: #eee; }
+  h1 { font-size: 16px; margin: 0 0 4px; }
+  .note { color: #888; font-size: 12px; margin-bottom: 16px; }
+  button { font: inherit; padding: 10px 16px; margin: 0 8px 8px 0; border-radius: 6px;
+           border: 1px solid #444; background: #222; color: #eee; cursor: pointer; }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  select { font: inherit; padding: 8px; background: #222; color: #eee; border: 1px solid #444;
+           border-radius: 6px; max-width: 100%; }
+  canvas { width: 100%; height: 100px; background: #000; border: 1px solid #333;
+           border-radius: 6px; display: block; margin: 12px 0; }
+  pre { background: #000; border: 1px solid #333; border-radius: 6px; padding: 12px;
+        overflow-x: auto; font-size: 12px; white-space: pre-wrap; }
+  .state { display: inline-block; padding: 4px 10px; border-radius: 999px;
+           background: #2a2a2a; font-variant: all-small-caps; letter-spacing: .05em; }
+  .err { color: #ff8a80; }
+  .row { margin: 12px 0; }
+</style>
+</head>
+<body>
+<h1>除錯測試台</h1>
+<p class="note">
+  驗證麥克風連接、VAD 自動收音與比對輸出用。正式介面請另建 <code>index.html</code>。<br />
+  手機測試需要 HTTPS：<code>npx serve</code> 之後用 ngrok／區網 HTTPS 開啟，或直接部署到 GitHub Pages。
+</p>
+
+<div class="row">狀態：<span class="state" id="state">idle</span> <span id="sub"></span></div>
+
+<div class="row">
+  <button id="connect">1. 連接麥克風</button>
+  <button id="start" disabled>2. 開始收音</button>
+  <button id="stop" disabled>停止</button>
+  <button id="cancel" disabled>取消</button>
+</div>
+
+<div class="row">
+  裝置：<select id="devices" disabled></select>
+</div>
+
+<canvas id="scope" width="720" height="100"></canvas>
+
+<div class="row">
+  <label><input type="checkbox" id="vad" checked /> 自動收音（VAD）</label>
+  <span id="level" style="margin-left:12px; color:#888"></span>
+</div>
+
+<audio id="playback" controls style="width:100%; display:none; margin:12px 0"></audio>
+
+<pre id="log">等待操作…</pre>
+
+<script type="module">
+import { createFoodVoiceMatcher, State } from '../src/app.js';
+
+// 測試用假資料，不是最終食物清單；等真實清單進來後改成 import ../src/data/foods.js
+const SAMPLE_FOODS = [
+  { id: 'test-low',   name: '【測試】低沉長音', profile: { pitch: .15, brightness: .1, roughness: .05, tonality: .9, rhythm: .05 } },
+  { id: 'test-fry',   name: '【測試】油炸噪音', profile: { roughness: .95, brightness: .9, tonality: .05, rhythm: .9 } },
+  { id: 'test-high',  name: '【測試】高音哼唱', profile: { pitch: .9, brightness: .4, roughness: .05, tonality: .95, rhythm: .05 } },
+  { id: 'test-burst', name: '【測試】短促爆音', profile: { attack: .95, duration: .1, sustain: .1, roughness: .6 } },
+];
+
+const $ = (id) => document.getElementById(id);
+const log = (...parts) => {
+  $('log').textContent = parts.map((p) => typeof p === 'string' ? p : JSON.stringify(p, null, 2)).join('\n');
+};
+
+// 用網址 hash 切換手動／自動模式，因為 VAD 設定是在建構時決定的
+const manualMode = location.hash === '#manual';
+const app = createFoodVoiceMatcher({ debug: true, vad: { enabled: !manualMode } });
+app.loadFoods(SAMPLE_FOODS);
+
+const support = app.support;
+log('環境檢查', support);
+if (!support.supported) {
+  $('connect').disabled = true;
+  $('log').classList.add('err');
+}
+
+app.on('state', ({ from, to, context }) => {
+  $('state').textContent = to;
+  $('sub').textContent = context.reason ? `（${context.reason}）` : '';
+  $('start').disabled  = ![State.READY, State.RESULT].includes(to);
+  $('stop').disabled   = ![State.RECORDING, State.LISTENING].includes(to);
+  $('cancel').disabled = ![State.RECORDING, State.LISTENING].includes(to);
+  $('devices').disabled = to === State.RECORDING;
+  console.log('[state]', from, '→', to, context);
+});
+
+app.on('devices', ({ devices, activeDeviceId }) => {
+  $('devices').innerHTML = devices
+    .map((d) => `<option value="${d.deviceId}"${d.deviceId === activeDeviceId ? ' selected' : ''}>${d.label}</option>`)
+    .join('');
+});
+
+app.on('vad', (v) => {
+  $('level').textContent =
+    `${v.db.toFixed(0)} dB ／ 噪音底 ${v.noiseFloorDb.toFixed(0)} dB ／ 高出 ${v.aboveFloorDb.toFixed(0)} dB ／ ${v.event}`;
+});
+
+app.on('progress', (p) => {
+  $('sub').textContent = `${(p.elapsedMs / 1000).toFixed(1)}s`;
+});
+
+app.on('error', (err) => {
+  $('log').classList.add('err');
+  log(`錯誤 [${err.code}]`, err.messageZh, err.detail ?? '');
+});
+
+app.on('interrupted', ({ muted }) => log(muted ? '麥克風被其他程式中斷' : '麥克風已恢復'));
+
+app.on('result', ({ matches, best, confident, features, audio }) => {
+  $('log').classList.remove('err');
+  log(
+    `最接近：${best.name}（相似度 ${(best.similarity * 100).toFixed(1)}%，confident=${confident}）`,
+    '',
+    '排名：',
+    matches.map((m, i) => `  ${i + 1}. ${m.name} — ${(m.similarity * 100).toFixed(1)}%`).join('\n'),
+    '',
+    '關鍵吻合維度：',
+    best.breakdown.slice(0, 4).map((b) => `  ${b.label}：輸入 ${b.input.toFixed(2)} / 目標 ${b.target.toFixed(2)} → 吻合 ${(b.fit * 100).toFixed(0)}%`).join('\n'),
+    '',
+    '特徵向量：', features.vector,
+    '原始量測：', features.raw,
+  );
+  if (audio) {
+    $('playback').src = URL.createObjectURL(audio.blob);
+    $('playback').style.display = 'block';
+  }
+});
+
+// --- 波形視覺化 ---
+const canvas = $('scope');
+const ctx2d = canvas.getContext('2d');
+let latest = null;
+app.on('level', (l) => { latest = l; });
+(function draw() {
+  requestAnimationFrame(draw);
+  const { width, height } = canvas;
+  ctx2d.clearRect(0, 0, width, height);
+  if (!latest) return;
+  const data = latest.waveform;
+  ctx2d.strokeStyle = latest.db > -40 ? '#7cf' : '#444';
+  ctx2d.lineWidth = 1.5;
+  ctx2d.beginPath();
+  for (let i = 0; i < data.length; i += 1) {
+    const x = (i / data.length) * width;
+    const y = height / 2 + data[i] * height * 0.45;
+    i === 0 ? ctx2d.moveTo(x, y) : ctx2d.lineTo(x, y);
+  }
+  ctx2d.stroke();
+})();
+
+// --- 操作 ---
+// 注意：connect() 一定要放在 click handler 裡直接呼叫，Safari 才會放行
+$('connect').onclick = async () => {
+  try {
+    const info = await app.connect();
+    log('已連接', info, '\n\n支援狀況：', app.support);
+  } catch (err) {
+    log(`連接失敗 [${err.code}]`, err.messageZh);
+  }
+};
+$('start').onclick  = () => app.start().catch((e) => log('啟動失敗', e.messageZh ?? String(e)));
+$('stop').onclick   = () => app.stop();
+$('cancel').onclick = () => app.cancel();
+$('devices').onchange = (e) => app.switchDevice(e.target.value).catch((err) => log(err.messageZh));
+$('vad').checked = !manualMode;
+$('vad').onchange = () => {
+  // VAD 設定在建構時決定，切換要重建實例；除錯台直接重載最省事
+  location.hash = $('vad').checked ? '' : 'manual';
+  location.reload();
+};
+</script>
+</body>
+</html>
