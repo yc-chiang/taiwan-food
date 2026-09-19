@@ -1,204 +1,391 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>台灣味・聲音測試</title>
-<style>
-  :root {
-    --bg: #0d0f14;
-    --surface: #161922;
-    --line: #262a35;
-    --text: #e9ebf2;
-    --muted: #868ea3;
-    /* 命中聲音型態後，整頁的強調色會換成該型的顏色 */
-    --accent: #ffb454;
-    --accent-soft: rgba(255, 180, 84, .14);
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; padding: 22px 16px 44px; min-height: 100dvh;
-    font-family: -apple-system, BlinkMacSystemFont, "Noto Sans TC", "PingFang TC", sans-serif;
-    background: var(--bg); color: var(--text);
-    display: flex; flex-direction: column; align-items: center; gap: 16px;
-    transition: background .6s ease;
-    overflow-x: hidden;
-  }
-  .wrap { width: 100%; max-width: 420px; }
-  header { text-align: center; }
-  h1 { font-size: 17px; font-weight: 600; margin: 0 0 3px; letter-spacing: .03em; }
-  .sub { font-size: 12px; color: var(--muted); }
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#090615" />
+  <meta name="description" content="以台灣食物聲音驅動的霓虹熱感人體互動介面。" />
+  <title>島嶼味覺聲場｜Sonic Digest</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23090615'/%3E%3Cpath d='M9 8c4 3 4 13 7 16 3-3 3-13 7-16' fill='none' stroke='%23ff3bd4' stroke-width='3' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='22' r='4' fill='%2300f0ff'/%3E%3C/svg%3E" />
+  <style>
+    :root{--bg:#07040f;--panel:rgba(19,10,36,.76);--line:rgba(141,118,255,.25);--pink:#ff35cf;--cyan:#17f7ff;--violet:#7937ff;--lime:#d4ff36;--text:#f5efff;--muted:#a397ba;--hot:#ff5b2e}
+    *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:Inter,"Noto Sans TC",system-ui,sans-serif}body{overflow-x:hidden;background:radial-gradient(circle at 50% -10%,#251047 0,transparent 40%),linear-gradient(180deg,#090515,#04020a)}button{font:inherit;color:inherit}button:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+    .shell{min-height:100vh;padding:22px;display:grid;grid-template-rows:auto 1fr auto;gap:18px;position:relative}.shell:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.12;background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size:42px 42px;mask-image:linear-gradient(to bottom,#000,transparent 80%)}
+    header{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:14px;position:relative;z-index:2}.brand{display:flex;align-items:center;gap:12px}.mark{width:34px;height:34px;border:1px solid var(--cyan);border-radius:50%;display:grid;place-items:center;box-shadow:0 0 20px rgba(23,247,255,.35);font-weight:800;font-size:12px}.brand h1{font-size:15px;margin:0;letter-spacing:.12em}.brand p{font-size:12px;color:var(--muted);margin:3px 0 0;letter-spacing:.08em}.live{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);letter-spacing:.12em}.dot{width:8px;height:8px;border-radius:50%;background:#4f465f}.recording .dot{background:#ff385f;box-shadow:0 0 16px #ff385f;animation:pulse 1s infinite}@keyframes pulse{50%{opacity:.35}}
+    main{display:grid;grid-template-columns:minmax(220px,280px) minmax(480px,1fr) minmax(220px,300px);gap:16px;min-height:660px}.panel,.stage{border:1px solid var(--line);background:var(--panel);backdrop-filter:blur(16px);border-radius:18px;position:relative;overflow:hidden}.panel{padding:18px}.panel-title{font-size:12px;color:var(--muted);letter-spacing:.16em;margin:0 0 18px;text-transform:uppercase}.status-card{padding:14px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:rgba(255,255,255,.025);margin-bottom:16px}.timer{font:600 32px ui-monospace,monospace;letter-spacing:.05em}.status-label{font-size:12px;color:var(--muted);margin-top:5px}.meter{display:grid;grid-template-columns:repeat(18,1fr);gap:3px;height:40px;align-items:end;margin:20px 0}.meter i{display:block;height:8%;min-height:3px;border-radius:3px;background:linear-gradient(var(--cyan),var(--pink));transition:height .1s}
+    .primary{width:100%;border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:14px;background:linear-gradient(135deg,#ec2dbd,#6d35ff);box-shadow:0 10px 35px rgba(170,39,255,.25);cursor:pointer;font-weight:700}.primary.stop{background:linear-gradient(135deg,#ff385f,#ff6a2f)}.primary:disabled{opacity:.4;cursor:not-allowed}.helper{font-size:12px;line-height:1.6;color:var(--muted);margin-top:14px}.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}.chip{font-size:11px;padding:7px 9px;border:1px solid rgba(255,255,255,.12);border-radius:999px;color:#c9bedc;background:transparent}
+    .stage{min-height:660px;background:#06020e}.scene-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transform:scale(1.035);transition:opacity 1.1s ease,transform 6s ease;filter:saturate(1.08) contrast(1.04)}.scene-image.active{opacity:1;transform:scale(1)}.stage:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(4,1,10,.36),transparent 22%,transparent 72%,rgba(4,1,10,.54)),radial-gradient(circle at 50% 48%,transparent 38%,rgba(4,1,10,.26) 100%)}.stage canvas{position:absolute;inset:0;width:100%;height:100%;z-index:1;mix-blend-mode:screen;pointer-events:none}.stage-top{position:absolute;left:18px;right:18px;top:16px;z-index:3;display:flex;justify-content:space-between;align-items:start;pointer-events:none}.stage-label{font-size:11px;letter-spacing:.16em;color:#f3eaff;text-shadow:0 2px 12px #000}.mode{font-size:11px;padding:7px 10px;border:1px solid rgba(23,247,255,.55);border-radius:999px;color:var(--cyan);background:rgba(6,2,14,.82)}.stage-bottom{position:absolute;left:18px;right:18px;bottom:16px;z-index:3;display:flex;justify-content:center}.merge{border:1px solid rgba(212,255,54,.48);background:rgba(13,20,10,.88);color:var(--lime);padding:12px 18px;border-radius:999px;cursor:pointer;letter-spacing:.08em;box-shadow:0 0 28px rgba(212,255,54,.1)}.merge kbd{font:inherit;color:#fff;padding:2px 7px;border:1px solid rgba(255,255,255,.24);border-radius:5px;margin-right:8px}.merge.active{background:var(--lime);color:#111;box-shadow:0 0 40px rgba(212,255,54,.5);transform:scale(.98)}
+    .clips{display:flex;flex-direction:column;gap:8px;max-height:190px;overflow:auto}.empty{padding:22px 12px;text-align:center;border:1px dashed rgba(255,255,255,.13);border-radius:14px;color:var(--muted);font-size:13px;line-height:1.6}.clip{padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);display:grid;grid-template-columns:36px 1fr auto;gap:10px;align-items:center}.clip button{width:36px;height:36px;border:1px solid rgba(23,247,255,.25);border-radius:50%;background:rgba(23,247,255,.06);cursor:pointer}.clip strong{font-size:13px;display:block}.clip span{font-size:11px;color:var(--muted)}.clip .num{font:12px ui-monospace,monospace;color:var(--pink)}
+    .presets{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:20px}.preset{border:1px solid rgba(255,255,255,.11);border-radius:12px;background:rgba(255,255,255,.025);padding:11px;text-align:left;cursor:pointer}.preset b{display:block;font-size:12px}.preset span{font-size:10px;color:var(--muted)}.preset.on{border-color:var(--pink);box-shadow:inset 0 0 18px rgba(255,53,207,.12)}
+    footer{display:flex;justify-content:space-between;gap:18px;align-items:center;color:var(--muted);font-size:11px;letter-spacing:.08em}.legend{display:flex;gap:14px}.legend span:before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px}.legend span:nth-child(1):before{background:var(--cyan)}.legend span:nth-child(2):before{background:var(--pink)}.legend span:nth-child(3):before{background:var(--lime)}
+    .toast{position:fixed;left:50%;top:76px;z-index:10;transform:translate(-50%,-20px);opacity:0;padding:10px 16px;border:1px solid rgba(255,255,255,.18);border-radius:999px;background:rgba(8,4,16,.92);font-size:13px;transition:.25s;pointer-events:none}.toast.show{opacity:1;transform:translate(-50%,0)}
+    @media(max-width:980px){main{grid-template-columns:230px 1fr}.right{grid-column:1/-1}.clips{display:grid;grid-template-columns:repeat(2,1fr);max-height:none}.stage{min-height:610px}}@media(max-width:720px){.shell{padding:12px}.brand p,footer .note{display:none}main{display:flex;flex-direction:column}.stage{order:-1;min-height:58vh}.panel{padding:15px}.clips{grid-template-columns:1fr}footer{justify-content:center}.stage-bottom{bottom:12px}.merge{font-size:12px}.live{font-size:10px}}
 
-  /* 右上角音樂開關 */
-  #bgm-toggle {
-    position: fixed; top: 14px; right: 14px; z-index: 10;
-    width: 34px; height: 34px; border-radius: 50%; cursor: pointer;
-    border: 1px solid var(--line); background: var(--surface); color: var(--muted);
-    font-size: 14px; display: grid; place-items: center; transition: .2s;
-  }
-  #bgm-toggle[data-on="true"] { color: var(--accent); border-color: var(--accent); }
+    /* ── 整合新增 ───────────────────────────────────── */
+    /* 模式切換（測試用，正式版可移除） */
+    .modes{display:flex;gap:4px;padding:3px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:999px;margin-bottom:14px}
+    .modes button{flex:1;padding:6px 8px;font-size:11px;border:0;border-radius:999px;background:transparent;color:var(--muted);cursor:pointer;transition:.2s;letter-spacing:.04em}
+    .modes button[aria-pressed="true"]{background:rgba(255,53,207,.16);color:var(--pink)}
+    /* 聲音型態指示器：偵測到哪一型就亮哪一顆 */
+    .presets .preset{transition:border-color .35s,box-shadow .35s,background .35s}
+    .preset.on{border-color:var(--c,var(--pink));box-shadow:inset 0 0 18px color-mix(in srgb,var(--c,#ff35cf) 22%,transparent),0 0 16px color-mix(in srgb,var(--c,#ff35cf) 18%,transparent)}
+    .preset.on b{color:var(--c,var(--pink))}
+    .preset .dot-c{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--c);margin-right:6px;vertical-align:1px}
+    /* 中央 loading：錄音結束後的分析過場 */
+    .loading{position:absolute;left:50%;top:62%;transform:translate(-50%,-50%);z-index:5;display:grid;place-items:center;opacity:0;pointer-events:none;transition:opacity .35s ease}
+    /* 背景彩度極高，不墊暗場的話掃描環會整個消失在畫面裡 */
+    .loading:before{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:330px;height:330px;border-radius:50%;
+      background:radial-gradient(circle,rgba(3,1,8,.9) 28%,rgba(3,1,8,.66) 52%,rgba(3,1,8,.24) 72%,transparent 84%);
+      -webkit-backdrop-filter:blur(7px) saturate(.7);backdrop-filter:blur(7px) saturate(.7)}
+    .loading.show{opacity:1}
+    .loading .rings{position:relative;width:150px;height:150px}
+    .loading .rings i{position:absolute;inset:0;border-radius:50%;border:2.5px solid var(--cyan);opacity:0;
+      box-shadow:0 0 22px rgba(23,247,255,.55),inset 0 0 18px rgba(23,247,255,.2);animation:scanRing 1.8s ease-out infinite}
+    .loading .rings i:nth-child(2){animation-delay:.45s;border-color:var(--pink)}
+    .loading .rings i:nth-child(3){animation-delay:.9s;border-color:var(--lime)}
+    @keyframes scanRing{0%{transform:scale(.35);opacity:.9}70%{opacity:.25}100%{transform:scale(1);opacity:0}}
+    .loading .core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:64px;height:64px;border-radius:50%;
+      background:radial-gradient(circle,rgba(23,247,255,.85),rgba(121,55,255,.35) 55%,transparent 72%);
+      box-shadow:0 0 40px rgba(23,247,255,.5);animation:corePulse 1.1s ease-in-out infinite}
+    @keyframes corePulse{50%{transform:translate(-50%,-50%) scale(1.25)}}
+    .loading .txt{position:absolute;left:50%;top:calc(100% + 18px);transform:translateX(-50%);white-space:nowrap;
+      font-size:12px;font-weight:600;letter-spacing:.24em;color:#9df6ff;
+      text-shadow:0 2px 6px #000,0 2px 16px #000,0 0 22px rgba(23,247,255,.85);animation:txtFade 1.6s ease-in-out infinite}
+    @keyframes txtFade{50%{opacity:.5}}
 
-  .modes { display: flex; gap: 4px; padding: 4px; background: var(--surface);
-           border: 1px solid var(--line); border-radius: 999px; }
-  .modes button { flex: 1; padding: 8px 12px; font: inherit; font-size: 13px; border: 0;
-                  border-radius: 999px; background: transparent; color: var(--muted);
-                  cursor: pointer; transition: .2s; }
-  .modes button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
+    /* 右側：偵測到的食物特徵 */
+    .feat-card{border:1px solid rgba(255,255,255,.1);border-radius:14px;background:rgba(255,255,255,.028);padding:14px;margin-bottom:14px;border-left:3px solid var(--c,rgba(255,255,255,.12))}
+    .feat-empty{padding:20px 12px;text-align:center;color:var(--muted);font-size:12.5px;line-height:1.7;border:1px dashed rgba(255,255,255,.13);border-radius:14px;margin-bottom:14px}
+    .feat-head{display:grid;grid-template-columns:44px 1fr;gap:11px;align-items:center;margin-bottom:12px}
+    .feat-head .emo{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:23px;background:rgba(0,0,0,.45);border:1px solid var(--c,rgba(255,255,255,.15))}
+    .feat-head b{font-size:17px;display:block;line-height:1.25}
+    .feat-head span{font-size:10.5px;color:var(--muted);letter-spacing:.05em}
+    .feat-type{font-size:11px;color:var(--c);letter-spacing:.1em;margin-bottom:11px;font-weight:600}
+    .feat-desc{font-size:11.5px;color:var(--muted);line-height:1.65;padding:9px 0;border-top:1px solid rgba(255,255,255,.08)}
+    .bars{display:grid;gap:5px;margin-top:4px}
+    .bar{display:grid;grid-template-columns:52px 1fr 28px;gap:8px;align-items:center;font-size:10.5px;color:var(--muted)}
+    .bar .track{height:5px;border-radius:3px;background:rgba(255,255,255,.07);overflow:hidden}
+    .bar .fill{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,var(--cyan),var(--c,var(--pink)));width:0;transition:width .7s cubic-bezier(.22,1,.36,1)}
+    .bar .val{text-align:right;font:10px ui-monospace,monospace;color:#8f85a6}
+    .sec-title{font-size:11px;color:var(--muted);letter-spacing:.14em;margin:16px 0 9px;text-transform:uppercase}
 
-  /* 視覺化舞台：canvas 在底，按鈕浮在中央 */
-  .stage { position: relative; width: 280px; height: 280px; margin: 6px auto 0; }
-  #viz { position: absolute; inset: 0; width: 100%; height: 100%; }
-  #mic {
-    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-    width: 116px; height: 116px; border-radius: 50%; cursor: pointer;
-    border: 1.5px solid var(--line); background: rgba(22, 25, 34, .9);
-    color: var(--text); font: inherit; font-size: 14px; font-weight: 500;
-    display: grid; place-items: center;
-    transition: transform .18s cubic-bezier(.34,1.56,.64,1), border-color .3s, color .3s;
-    -webkit-tap-highlight-color: transparent;
-  }
-  #mic:active { transform: translate(-50%, -50%) scale(.94); }
-  #mic:disabled { opacity: .5; cursor: not-allowed; }
-  #mic[data-state="recording"] { border-color: var(--accent); color: var(--accent); }
-  .hint { font-size: 12px; color: var(--muted); text-align: center; min-height: 18px;
-          margin-top: 2px; }
-
-  /* 試試看 */
-  .try { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
-  .try li { display: grid; grid-template-columns: auto 1fr; gap: 1px 10px;
-            background: var(--surface); border: 1px solid var(--line);
-            border-radius: 10px; padding: 9px 12px; font-size: 13px;
-            border-left: 3px solid var(--c); }
-  .try b { font-weight: 500; white-space: nowrap; }
-  .try span { color: var(--muted); }
-  .try em { grid-column: 1 / -1; font-style: normal; font-size: 11px; color: #5b6377; }
-  .try-title { font-size: 12px; color: var(--muted); margin: 0 0 8px; }
-
-  /* 結果卡 */
-  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
-          padding: 26px 20px 20px; text-align: center; position: relative; overflow: hidden; }
-  .card[hidden] { display: none; }
-  /* 命中型態的色光從卡片上緣暈開 */
-  .card::before { content: ''; position: absolute; top: -60px; left: 50%;
-                  transform: translateX(-50%); width: 200px; height: 140px;
-                  background: radial-gradient(ellipse, var(--accent-soft), transparent 70%);
-                  pointer-events: none; }
-  .face { width: 108px; height: 108px; margin: 0 auto 14px; border-radius: 50%;
-          background: #0a0c11; border: 1px solid var(--line); position: relative;
-          display: grid; place-items: center; font-size: 54px; line-height: 1;
-          animation: pop .5s cubic-bezier(.34,1.56,.64,1) both; }
-  .face img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-  @keyframes pop { from { opacity: 0; transform: scale(.55); } }
-  .sound-tag { font-size: 12px; color: var(--accent); letter-spacing: .06em;
-               margin-bottom: 8px; animation: fadeUp .45s .1s both; }
-  .food { font-size: 31px; font-weight: 600; margin: 0 0 3px;
-          animation: fadeUp .45s .16s both; }
-  .food-en { font-size: 12px; color: var(--muted); animation: fadeUp .45s .22s both; }
-  .asmr { font-size: 12px; color: var(--muted); margin-top: 12px;
-          animation: fadeUp .45s .28s both; }
-  .asmr b { color: var(--accent); font-weight: 500; }
-  .feeling { font-size: 12px; color: var(--muted); line-height: 1.7; text-align: left;
-             border-top: 1px solid var(--line); padding-top: 13px; margin-top: 14px;
-             animation: fadeUp .45s .34s both; }
-  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } }
-
-  .status { font-size: 11px; color: var(--muted); text-align: center; }
-  .status.err { color: #ff8a80; }
-  details { margin-top: 2px; }
-  summary { font-size: 12px; color: var(--muted); cursor: pointer; padding: 6px 0; }
-  pre { font-size: 11px; line-height: 1.55; background: #080a0e; border: 1px solid var(--line);
-        border-radius: 8px; padding: 12px; overflow-x: auto; color: var(--muted);
-        white-space: pre-wrap; margin: 6px 0 0; }
-  select { width: 100%; font: inherit; font-size: 12px; padding: 8px 10px; margin-top: 6px;
-           background: #080a0e; color: var(--muted); border: 1px solid var(--line);
-           border-radius: 8px; }
-  audio { width: 100%; margin-top: 10px; }
-  @media (prefers-reduced-motion: reduce) {
-    * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
-  }
-</style>
+    /* 舞台上的食物揭示卡（定位在胃部中央） */
+    .reveal{position:absolute;left:50%;top:62%;transform:translate(-50%,-50%) scale(.82);z-index:4;text-align:center;opacity:0;pointer-events:none;transition:opacity .5s ease,transform .6s cubic-bezier(.34,1.56,.64,1);padding:26px 34px 30px;isolation:isolate}
+    /* 背景圖彩度極高，文字直接壓上去會讀不到 —— 墊一層徑向暗場，仍保留霓虹透出來 */
+    .reveal:before{content:"";position:absolute;inset:-30px;z-index:-1;border-radius:50%;
+      background:radial-gradient(ellipse at center,rgba(3,1,8,.92) 34%,rgba(3,1,8,.72) 56%,rgba(3,1,8,.28) 74%,transparent 86%);
+      -webkit-backdrop-filter:blur(6px) saturate(.75);backdrop-filter:blur(6px) saturate(.75)}
+    .reveal.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+    .reveal .ring{width:118px;height:118px;margin:0 auto 12px;border-radius:50%;display:grid;place-items:center;font-size:58px;line-height:1;
+      background:radial-gradient(circle,color-mix(in srgb,var(--c,#ff35cf) 26%,transparent),rgba(6,2,14,.75) 72%);
+      border:1px solid var(--c,#ff35cf);box-shadow:0 0 46px color-mix(in srgb,var(--c,#ff35cf) 40%,transparent),inset 0 0 30px color-mix(in srgb,var(--c,#ff35cf) 18%,transparent)}
+    .reveal .ring img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+    .reveal .type{font-size:11.5px;letter-spacing:.18em;color:var(--c,#ff35cf);margin-bottom:9px;font-weight:600;text-shadow:0 2px 6px #000,0 0 18px color-mix(in srgb,var(--c,#ff35cf) 75%,transparent)}
+    .reveal .name{font-size:32px;font-weight:700;margin:0;color:#fff;text-shadow:0 2px 6px #000,0 4px 26px #000,0 0 34px color-mix(in srgb,var(--c,#ff35cf) 55%,transparent)}
+    .reveal .en{font-size:12.5px;color:#e6dcf5;letter-spacing:.08em;margin-top:5px;text-shadow:0 2px 6px #000,0 0 14px #000}
+    .reveal .sub{font-size:11.5px;color:#bdb2d2;margin-top:12px;padding-top:11px;border-top:1px solid rgba(255,255,255,.12);text-shadow:0 2px 6px #000,0 0 12px #000}
+    /* 背景音樂開關 */
+    #bgmBtn{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--muted);cursor:pointer;font-size:12px;display:grid;place-items:center;transition:.2s;flex:none}
+    #bgmBtn[data-on="true"]{color:var(--cyan);border-color:rgba(23,247,255,.5);box-shadow:0 0 14px rgba(23,247,255,.2)}
+    .clip.hit{border-color:color-mix(in srgb,var(--c,#ff35cf) 45%,transparent)}
+    .clip .emo{font-size:20px;text-align:center}
+    @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+  </style>
 </head>
 <body>
-
-<button id="bgm-toggle" data-on="false" aria-label="背景音樂開關">♪</button>
-
-<div class="wrap">
+<div class="shell" id="app">
   <header>
-    <h1>台灣味・聲音測試</h1>
-    <div class="sub">發出聲音，跑出對應的台灣小吃</div>
+    <div class="brand"><div class="mark">味</div><div><h1>島嶼味覺聲場</h1><p>SONIC DIGEST · TAIWAN</p></div></div>
+    <div class="live" id="live"><span class="dot"></span><span id="liveText">等待聲音輸入</span><button id="bgmBtn" data-on="false" aria-label="背景音樂開關" title="背景音樂">♪</button></div>
   </header>
-</div>
+  <main>
+    <section class="panel left" aria-label="錄音控制">
+      <p class="panel-title">01 · 收集食物聲音</p>
+      <div class="modes" role="group" aria-label="判定模式">
+        <button id="modeMatch" aria-pressed="true">聲音比對</button>
+        <button id="modeRandom" aria-pressed="false">隨機測試</button>
+      </div>
+      <div class="status-card"><div class="timer" id="timer">00:00.0</div><div class="status-label" id="status">麥克風尚未啟動</div></div>
+      <div class="meter" id="meter" aria-label="聲音音量"></div>
+      <button class="primary" id="recordBtn">開始錄音</button>
+      <p class="helper">對著麥克風發出食物的聲音 —— 咬碎、油炸、吸湯、咀嚼或摩擦。系統會判斷聲音質地，找出最接近的台灣小吃。</p>
+      <div class="chips"><span class="chip">咀嚼</span><span class="chip">酥脆</span><span class="chip">油炸</span><span class="chip">湯汁</span><span class="chip">摩擦</span></div>
+    </section>
 
-<div class="wrap modes" role="group" aria-label="模式">
-  <button id="mode-random" aria-pressed="true">隨機模式</button>
-  <button id="mode-match" aria-pressed="false">比對模式</button>
-</div>
+    <section class="stage" aria-label="霓虹人體聲音視覺">
+      <img class="scene-image active" id="sceneEsophagus" src="assets/esophagus.jpg" alt="霓虹熱感風格的食物進入食道畫面" />
+      <img class="scene-image" id="sceneStomach" src="assets/stomach.jpg" alt="霓虹熱感風格的人體胃部與食物畫面" />
+      <canvas id="visual"></canvas>
+      <div class="loading" id="loading">
+        <div class="rings"><i></i><i></i><i></i><div class="core"></div>
+          <div class="txt" id="loadingTxt">分析聲音質地</div></div>
+      </div>
+      <div class="reveal" id="reveal">
+        <div class="ring" id="revealRing"></div>
+        <div class="type" id="revealType"></div>
+        <p class="name" id="revealName"></p>
+        <div class="en" id="revealEn"></div>
+        <div class="sub" id="revealSub"></div>
+      </div>
+      <div class="stage-top"><span class="stage-label">LIVE BODY SCAN / AUDIO REACTIVE</span><span class="mode" id="mode">食道傳輸中</span></div>
+      <div class="stage-bottom"><button class="merge" id="mergeBtn"><kbd>SPACE</kbd>融合聲音與食物</button></div>
+    </section>
 
-<div class="stage">
-  <canvas id="viz"></canvas>
-  <button id="mic" data-state="idle"><span id="mic-label">開始收音</span></button>
+    <section class="panel right" aria-label="聲音樣本">
+      <p class="panel-title">02 · 食物特徵</p>
+      <div id="featPanel"><div class="feat-empty">尚未偵測到食物。<br>錄一段聲音後，這裡會顯示它的特徵。</div></div>
+      <p class="sec-title">聲音型態</p>
+      <div class="presets" id="soundTypes" aria-label="聲音型態"></div>
+      <p class="sec-title">收集的樣本</p>
+      <div class="clips" id="clips"></div>
+      <p class="helper" id="typeHelper">錄音結束後，偵測到的聲音型態會在上方亮起，並從該型的食物中給出結果。</p>
+    </section>
+  </main>
+  <footer><div class="legend"><span>聲音能量</span><span>食物碎片</span><span>融合完成</span></div><span class="note">建議使用耳機與 Chrome 瀏覽器 · 麥克風資料不會上傳</span></footer>
 </div>
-<div class="hint" id="hint">第一次會詢問麥克風權限</div>
-
-<div class="wrap">
-  <div class="card" id="result" hidden>
-    <div class="face" id="r-face"></div>
-    <div class="sound-tag" id="r-sound"></div>
-    <p class="food" id="r-food"></p>
-    <div class="food-en" id="r-food-en"></div>
-    <div class="asmr" id="r-asmr"></div>
-    <div class="feeling" id="r-feeling"></div>
-  </div>
-</div>
-
-<div class="wrap">
-  <p class="try-title">試試看這幾種聲音</p>
-  <ul class="try" id="try-list"></ul>
-</div>
-
-<div class="wrap">
-  <div class="status" id="status">尚未連接麥克風</div>
-  <details>
-    <summary>除錯資訊</summary>
-    <select id="devices" disabled><option>尚未授權</option></select>
-    <audio id="playback" controls hidden></audio>
-    <pre id="debug">—</pre>
-  </details>
-</div>
-
+<div class="toast" id="toast" role="status"></div>
 <script type="module">
-import { createFoodVoiceMatcher, State } from './src/app.js';
+/**
+ * 島嶼味覺聲場 —— 前端視覺（原作）× 聲音比對引擎（src/）整合版
+ *
+ * 視覺、版面、動畫沿用原始設計；音訊層整個換成 src/ 底下的引擎：
+ *   原本：MediaRecorder 錄音 + 平均音量，不做任何分析，特徵鈕是手動切換
+ *   現在：AudioWorklet 取原始 PCM → 12 維感知特徵 → 比對 6 種聲音型態 → 給出食物
+ */
+import { createFoodVoiceMatcher, State, FEATURE_SPACE } from './src/app.js';
 import {
   randomFood, pickFoodFromSound, foodById,
   foodsAsMatchItems, matchGranularity, foodsBySound,
 } from './src/data/foods.js';
 import { soundTypes, soundTypesAsMatchItems } from './src/data/sound-types.js';
 
-const $ = (id) => document.getElementById(id);
+const $ = (s) => document.querySelector(s);
+const canvas = $('#visual');
+const ctx = canvas.getContext('2d');
 
-/** 測試階段用手動模式：一顆按鈕控制開始與結束，不啟用 VAD 自動斷句。 */
+const state = {
+  recording: false,
+  clips: [],
+  start: 0,
+  level: 0.08,
+  merge: 0,
+  phase: 'esophagus',
+  detected: null,     // 這一輪偵測到的聲音型態
+  accent: '#ff35cf',
+};
+
+// ── 比對引擎 ─────────────────────────────────────────────
+// 手動模式：一顆按鈕控制起訖，不啟用 VAD 自動斷句
 const app = createFoodVoiceMatcher({
   vad: { enabled: false },
   recording: { maxDurationMs: 15000 },
 });
-
 const granularity = matchGranularity();
 app.loadFoods(granularity === 'food' ? foodsAsMatchItems() : soundTypesAsMatchItems());
 
-$('try-list').innerHTML = soundTypes
-  .map((t) => `<li style="--c:${t.color}"><b>${t.emoji} ${t.name}</b><span>${t.tryThis}</span>
-    <em>${foodsBySound(t.id).map((f) => f.name).join('、')}</em></li>`)
-  .join('');
-
-let mode = 'random';
+let mode = 'match';
 let connected = false;
+let revealing = false;
+let analyzeStartedAt = 0;
 
-// ─────────────────────────────────────────────── 背景音樂
 /**
- * 常態播放的環境音。兩個關鍵處理：
- *   1. 瀏覽器的 autoplay 政策禁止未經互動就出聲，所以等第一次點擊才啟動
- *   2. 收音期間必須靜音 —— 我們刻意關閉了瀏覽器的回音消除（那會破壞音色特徵），
- *      喇叭放出來的音樂會被麥克風原封不動錄進去，污染比對結果
+ * 分析其實只要 100ms 上下，直接跳結果會讓人覺得「它根本沒在想」。
+ * 壓一個最短過場時間，掃描動畫才有存在感 —— 這段等待是體驗的一部分，不是延遲。
+ */
+const MIN_LOADING_MS = 1600;
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function showLoading(on, text = '分析聲音質地') {
+  $('#loadingTxt').textContent = text;
+  $('#loading').classList.toggle('show', on);
+}
+
+// ── 聲音型態指示器 ───────────────────────────────────────
+$('#soundTypes').innerHTML = soundTypes
+  .map((t) => `<button class="preset" data-type="${t.id}" style="--c:${t.color}" type="button">
+      <b><i class="dot-c"></i>${t.emoji} ${t.name}</b>
+      <span>${t.tryThis}</span>
+    </button>`)
+  .join('');
+// 點一下顯示該型有哪些食物，方便邊測邊對照
+for (const btn of document.querySelectorAll('#soundTypes .preset')) {
+  btn.onclick = () => {
+    const t = soundTypes.find((x) => x.id === btn.dataset.type);
+    toast(`${t.emoji} ${t.name}：${foodsBySound(t.id).map((f) => f.name).join('、')}`);
+  };
+}
+function markDetected(typeId) {
+  for (const btn of document.querySelectorAll('#soundTypes .preset')) {
+    btn.classList.toggle('on', btn.dataset.type === typeId);
+  }
+}
+
+// ── 原作的畫布繪圖（保留） ────────────────────────────────
+const meter = $('#meter');
+for (let i = 0; i < 18; i += 1) meter.appendChild(document.createElement('i'));
+
+function fit() {
+  const d = devicePixelRatio || 1;
+  const r = canvas.getBoundingClientRect();
+  canvas.width = r.width * d;
+  canvas.height = r.height * d;
+  ctx.setTransform(d, 0, 0, d, 0, 0);
+}
+addEventListener('resize', fit);
+fit();
+
+function toast(t) {
+  const el = $('#toast');
+  el.textContent = t;
+  el.classList.add('show');
+  clearTimeout(toast.t);
+  toast.t = setTimeout(() => el.classList.remove('show'), 2600);
+}
+
+function fmt(ms) {
+  const s = ms / 1000;
+  return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}.${Math.floor((s % 1) * 10)}`;
+}
+
+function blob(x, y, r, color, a = 1) {
+  const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+  g.addColorStop(0, color);
+  g.addColorStop(0.35, color.replace(')', `,${0.5 * a})`).replace('rgb', 'rgba'));
+  g.addColorStop(1, 'transparent');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, 7);
+  ctx.fill();
+}
+
+/** 霓虹人體路徑。原作寫好但未接上，這裡在收音時疊上去，呼應「AUDIO REACTIVE」。 */
+function pathBody(w, h) {
+  ctx.save();
+  ctx.translate(w / 2, 0);
+  ctx.lineCap = 'round';
+  const pulse = 1 + state.level * 0.3;
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.strokeStyle = 'rgba(88,37,188,.18)';
+  ctx.lineWidth = Math.min(w * 0.43, 230);
+  ctx.beginPath();
+  ctx.moveTo(0, h * 0.14);
+  ctx.bezierCurveTo(-w * 0.15, h * 0.22, -w * 0.18, h * 0.45, -w * 0.13, h * 0.78);
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(20,242,255,.34)';
+  ctx.shadowColor = '#14f2ff';
+  ctx.shadowBlur = 22;
+  ctx.lineWidth = 5 * pulse;
+  ctx.beginPath();
+  ctx.moveTo(0, h * 0.17);
+  ctx.bezierCurveTo(-8, h * 0.3, 12, h * 0.38, 0, h * 0.53);
+  ctx.stroke();
+  ctx.shadowColor = state.accent;
+  ctx.shadowBlur = 26;
+  ctx.strokeStyle = 'rgba(255,53,207,.38)';
+  ctx.lineWidth = 16 * pulse;
+  ctx.beginPath();
+  ctx.ellipse(0, h * 0.65, w * 0.12, h * 0.105, -0.15, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function foodGlyph(x, y, s, type, alpha = 1) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(s, s);
+  ctx.globalAlpha = alpha;
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.shadowBlur = 18;
+  ctx.shadowColor = type % 2 ? '#ff35cf' : '#17f7ff';
+  ctx.strokeStyle = type % 2 ? '#ff67df' : '#56fbff';
+  ctx.fillStyle = type % 2 ? 'rgba(255,53,207,.18)' : 'rgba(23,247,255,.16)';
+  ctx.lineWidth = 2;
+  if (type % 4 === 0) {
+    ctx.beginPath(); ctx.arc(0, 0, 12, Math.PI, 0);
+    ctx.quadraticCurveTo(0, 16, -12, 0); ctx.fill(); ctx.stroke();
+  } else if (type % 4 === 1) {
+    ctx.beginPath(); ctx.ellipse(0, 2, 14, 8, 0, 0, 7); ctx.fill(); ctx.stroke();
+    for (let i = -8; i < 10; i += 6) { ctx.beginPath(); ctx.arc(i, -3, 2.5, 0, 7); ctx.fill(); }
+  } else if (type % 4 === 2) {
+    ctx.beginPath(); ctx.arc(0, 0, 11, 0, 7); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-7, -9); ctx.lineTo(8, 8); ctx.stroke();
+  } else {
+    ctx.beginPath(); ctx.moveTo(-13, 7); ctx.quadraticCurveTo(0, -17, 13, 7);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawMerged(w, h, p) {
+  const x = w / 2;
+  const y = h * 0.64;
+  const s = 1.2 + p * 0.55;
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  blob(x, y, 110 * p, 'rgb(212,255,54)', p);
+  ctx.translate(x, y);
+  ctx.scale(s, s);
+  ctx.globalAlpha = Math.min(1, p * 1.5);
+  ctx.shadowColor = '#d4ff36';
+  ctx.shadowBlur = 30;
+  ctx.strokeStyle = '#e7ff7b';
+  ctx.fillStyle = 'rgba(212,255,54,.12)';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.ellipse(0, 16, 52, 16, 0, 0, 7); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-44, 11); ctx.quadraticCurveTo(0, 54, 44, 11); ctx.stroke();
+  for (let i = 0; i < 7; i += 1) {
+    const a = (i / 6) * Math.PI * 2;
+    ctx.beginPath(); ctx.arc(Math.cos(a) * 27, Math.sin(a) * 10 - 1, 5 + (i % 3), 0, 7); ctx.stroke();
+  }
+  ctx.beginPath();
+  ctx.moveTo(-18, -13); ctx.bezierCurveTo(-10, -31, 4, -29, 6, -11);
+  ctx.moveTo(2, -12); ctx.bezierCurveTo(12, -37, 29, -26, 24, -8);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function setPhase(phase) {
+  state.phase = phase;
+  $('#sceneEsophagus').classList.toggle('active', phase === 'esophagus');
+  $('#sceneStomach').classList.toggle('active', phase === 'stomach');
+  $('#mode').textContent = phase === 'esophagus' ? '食物進入食道' : '食物抵達胃部';
+}
+
+function animate(now) {
+  const r = canvas.getBoundingClientRect();
+  const w = r.width;
+  const h = r.height;
+  ctx.clearRect(0, 0, w, h);
+
+  if (state.recording) pathBody(w, h);
+
+  if (state.phase === 'esophagus') {
+    const count = Math.max(3, state.clips.length * 2 + 2);
+    for (let i = 0; i < count; i += 1) {
+      const q = ((now * 0.0001 + i / count) % 1);
+      const x = w * 0.52 + Math.sin(q * 15 + i) * 8;
+      const y = h * (0.18 + q * 0.63);
+      foodGlyph(x, y, Math.min(0.82, w / 760), i, 0.18 + state.level * 0.65);
+    }
+  } else {
+    state.clips.forEach((c, i) => {
+      const a = now * 0.0004 + i * 2.2;
+      foodGlyph(w * 0.55 + Math.cos(a) * (34 + i * 3), h * 0.59 + Math.sin(a * 1.3) * 28,
+        Math.min(0.9, w / 690), i, 0.55);
+    });
+  }
+  if (state.merge > 0) {
+    state.merge = Math.min(1, state.merge + 0.012);
+    drawMerged(w, h, state.merge);
+  }
+  requestAnimationFrame(animate);
+}
+requestAnimationFrame(animate);
+
+// ── 背景音樂 ─────────────────────────────────────────────
+/**
+ * 收音期間必須靜音：我們刻意關掉瀏覽器的回音消除（那會破壞音色特徵），
+ * 喇叭放出來的音樂會被麥克風原封不動錄進去，污染比對結果。
  */
 const BGM_VOLUME = 0.16;
 const bgm = new Audio('./assets/bgm.mp3');
@@ -219,279 +406,262 @@ function fadeBgm(target, ms = 400) {
     if (i >= steps) clearInterval(fadeTimer);
   }, 40);
 }
-
 async function startBgm() {
   if (!bgmWanted || !bgm.paused) return;
   try {
     await bgm.play();
-    fadeBgm(BGM_VOLUME, 1200);
-    $('bgm-toggle').dataset.on = 'true';
-  } catch {
-    // 仍被 autoplay 政策擋著，等下一次互動再試
-  }
+    fadeBgm(BGM_VOLUME, 1400);
+    $('#bgmBtn').dataset.on = 'true';
+  } catch { /* autoplay 仍被擋，等下次互動 */ }
 }
-
-$('bgm-toggle').onclick = () => {
+$('#bgmBtn').onclick = (e) => {
+  e.stopPropagation();
   bgmWanted = !bgmWanted;
-  $('bgm-toggle').dataset.on = String(bgmWanted);
+  $('#bgmBtn').dataset.on = String(bgmWanted);
   if (bgmWanted) startBgm();
   else { fadeBgm(0, 300); setTimeout(() => bgm.pause(), 320); }
 };
 
-// ─────────────────────────────────────────────── 視覺化
-const canvas = $('viz');
-const ctx = canvas.getContext('2d');
-let latest = null;
-let accent = '#ffb454';
-let smoothed = null;   // 平滑後的頻譜，讓動畫不會抖
-let phase = 0;
-
-function sizeCanvas() {
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  canvas.width = canvas.clientWidth * dpr;
-  canvas.height = canvas.clientHeight * dpr;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-}
-sizeCanvas();
-addEventListener('resize', sizeCanvas);
-
-app.on('level', (l) => { latest = l; });
-
-const BARS = 72;
-function draw() {
-  requestAnimationFrame(draw);
-  const w = canvas.clientWidth;
-  const h = canvas.clientHeight;
-  const cx = w / 2;
-  const cy = h / 2;
-  const base = 62;          // 內圈半徑，剛好貼著按鈕外緣
-  ctx.clearRect(0, 0, w, h);
-  phase += 0.012;
-
-  const state = app.state;
-  const active = state === State.RECORDING || state === State.LISTENING;
-
-  if (!smoothed) smoothed = new Float32Array(BARS);
-
-  for (let i = 0; i < BARS; i += 1) {
-    let target;
-    if (active && latest?.frequency) {
-      // 只取前 60% 的頻段：高頻大多是空的，全取會有一半的柱子不動
-      const idx = Math.floor((i / BARS) * latest.frequency.length * 0.6);
-      target = (latest.frequency[idx] / 255) ** 1.4 * 46;
-    } else if (state === State.ANALYZING) {
-      // 分析中：一圈跑動的波，讓等待有事情在發生的感覺
-      target = 8 + Math.sin(phase * 6 - (i / BARS) * Math.PI * 4) * 6;
-    } else {
-      // 待機：緩慢呼吸
-      target = 4 + Math.sin(phase * 2 + i * 0.25) * 2.5;
-    }
-    smoothed[i] += (target - smoothed[i]) * (active ? 0.35 : 0.08);
-  }
-
-  ctx.lineCap = 'round';
-  for (let i = 0; i < BARS; i += 1) {
-    const angle = (i / BARS) * Math.PI * 2 - Math.PI / 2;
-    const len = Math.max(1.5, smoothed[i]);
-    const x1 = cx + Math.cos(angle) * base;
-    const y1 = cy + Math.sin(angle) * base;
-    const x2 = cx + Math.cos(angle) * (base + len);
-    const y2 = cy + Math.sin(angle) * (base + len);
-    ctx.strokeStyle = active ? accent : '#2c313d';
-    ctx.globalAlpha = active ? 0.35 + (len / 46) * 0.65 : 0.55;
-    ctx.lineWidth = 2.5;
-    ctx.beginPath();
-    ctx.moveTo(x1, y1);
-    ctx.lineTo(x2, y2);
-    ctx.stroke();
-  }
-  ctx.globalAlpha = 1;
-
-  // 錄音時的外圈光暈，強度跟著音量走
-  if (active && latest) {
-    const pct = Math.max(0, Math.min(1, (latest.db + 60) / 50));
-    ctx.beginPath();
-    ctx.arc(cx, cy, base + 52 + pct * 14, 0, Math.PI * 2);
-    ctx.strokeStyle = accent;
-    ctx.globalAlpha = pct * 0.28;
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-    ctx.globalAlpha = 1;
-  }
-}
-draw();
-
-/** 把整頁的強調色換成命中型態的顏色 */
-function setAccent(hex) {
-  accent = hex;
-  document.documentElement.style.setProperty('--accent', hex);
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  document.documentElement.style.setProperty('--accent-soft', `rgba(${r},${g},${b},.14)`);
-}
-
-// ─────────────────────────────────────────────── 模式
+// ── 模式切換 ─────────────────────────────────────────────
 function setMode(next) {
   mode = next;
-  $('mode-random').setAttribute('aria-pressed', String(next === 'random'));
-  $('mode-match').setAttribute('aria-pressed', String(next === 'match'));
-  $('hint').textContent =
-    next === 'random'
-      ? '錄音流程照跑，結果隨機給一道（測試用）'
-      : granularity === 'food'
-        ? '依聲音特徵直接比對 20 道食物'
-        : '判斷你發出的是哪一種聲音型態，再給該型的食物';
+  $('#modeMatch').setAttribute('aria-pressed', String(next === 'match'));
+  $('#modeRandom').setAttribute('aria-pressed', String(next === 'random'));
+  $('#typeHelper').textContent = next === 'match'
+    ? '錄音結束後，偵測到的聲音型態會在上方亮起，並從該型的食物中給出結果。'
+    : '隨機模式：錄音與分析流程照跑，但結果隨機給一道，用來確認流程是否順暢。';
 }
-$('mode-random').onclick = () => setMode('random');
-$('mode-match').onclick = () => setMode('match');
+$('#modeMatch').onclick = () => setMode('match');
+$('#modeRandom').onclick = () => setMode('random');
 
-// ─────────────────────────────────────────────── 環境
+// ── 狀態與 UI ────────────────────────────────────────────
 const support = app.support;
 if (!support.supported) {
-  $('mic').disabled = true;
-  $('status').classList.add('err');
-  $('status').textContent =
-    support.issues[0] === 'INSECURE_CONTEXT'
-      ? '需要 HTTPS 或 localhost 才能使用麥克風'
-      : '這個瀏覽器不支援錄音';
+  $('#recordBtn').disabled = true;
+  $('#status').textContent = support.issues[0] === 'INSECURE_CONTEXT'
+    ? '需要 HTTPS 或 localhost 才能使用麥克風'
+    : '這個瀏覽器不支援錄音';
 }
-$('debug').textContent = JSON.stringify(support, null, 1);
 
-// ─────────────────────────────────────────────── 狀態
-const LABELS = {
-  [State.IDLE]: '開始收音', [State.CONNECTING]: '連接中…', [State.READY]: '開始收音',
-  [State.LISTENING]: '請發聲', [State.RECORDING]: '結束收音',
-  [State.ANALYZING]: '分析中…', [State.RESULT]: '再錄一次', [State.ERROR]: '重試',
-};
+app.on('level', ({ db }) => {
+  // 原作的 state.level 是 0~1 的音量比例，這裡用 dB 換算：-60dB 當底、-10dB 當滿
+  state.level = Math.max(0, Math.min(1, (db + 60) / 50));
+});
 
 app.on('state', ({ to, context }) => {
-  $('mic-label').textContent = LABELS[to] ?? to;
-  $('mic').dataset.state = to;
-  $('mic').disabled = to === State.CONNECTING || to === State.ANALYZING;
-  if (to === State.RECORDING) {
-    $('status').classList.remove('err');
-    $('status').textContent = '收音中…';
+  state.recording = to === State.RECORDING;
+  if (to === State.ANALYZING) {
+    analyzeStartedAt = performance.now();
+    revealing = true;
+    showLoading(true);
   }
-  // 錄完就把音樂放回來
+  // 分析失敗（太短／太安靜）不會走到 result，要在這裡把 loading 收掉
+  if ((to === State.READY || to === State.ERROR) && revealing) {
+    revealing = false;
+    showLoading(false);
+  }
+  const b = $('#recordBtn');
+  b.textContent = state.recording ? '結束錄音'
+    : to === State.CONNECTING ? '連接中…'
+    : to === State.ANALYZING ? '分析中…'
+    : state.clips.length ? '再錄一段' : '開始錄音';
+  b.classList.toggle('stop', state.recording);
+  b.disabled = to === State.CONNECTING || to === State.ANALYZING || revealing;
+  $('#live').classList.toggle('recording', state.recording);
+  $('#liveText').textContent = state.recording ? '正在接收食物聲音'
+    : to === State.ANALYZING ? '分析聲音質地中' : '等待聲音輸入';
+  $('#status').textContent = state.recording ? '聲音正在形成食物碎片'
+    : to === State.ANALYZING ? '比對聲音型態…'
+    : to === State.RESULT ? '已找到最接近的食物'
+    : '麥克風待命';
+
+  if (!state.recording) state.level = 0.08;
+  // 錄完把音樂放回來
   if (to !== State.RECORDING && to !== State.LISTENING && bgmWanted && !bgm.paused) {
-    fadeBgm(BGM_VOLUME, 700);
+    fadeBgm(BGM_VOLUME, 800);
   }
-  if (context.reason) $('status').textContent = `已停止（${context.reason}）`;
+  if (context.reason === 'too-short') toast('錄得太短了，請再長一點');
+  if (context.reason === 'too-quiet') toast('幾乎沒有聲音，請靠近麥克風');
 });
 
 app.on('progress', ({ elapsedMs }) => {
-  $('status').textContent = `收音中… ${(elapsedMs / 1000).toFixed(1)} 秒`;
+  $('#timer').textContent = fmt(elapsedMs);
+  const lv = state.level;
+  [...meter.children].forEach((el, i) => {
+    el.style.height = `${Math.max(7, Math.min(100, lv * 125 + (i % 5) * 4 - Math.abs(i - 8) * 2))}%`;
+  });
 });
 
-app.on('devices', ({ devices, activeDeviceId }) => {
-  $('devices').disabled = devices.length < 2;
-  $('devices').innerHTML = devices
-    .map((d) => `<option value="${d.deviceId}"${d.deviceId === activeDeviceId ? ' selected' : ''}>${d.label}</option>`)
-    .join('');
-});
-$('devices').onchange = (e) => app.switchDevice(e.target.value).catch(showError);
+app.on('error', (err) => toast(err.messageZh ?? String(err)));
+app.on('interrupted', ({ muted }) => { if (muted) toast('麥克風被其他程式中斷，請重新開始'); });
 
-app.on('interrupted', ({ muted }) => {
-  if (muted) showError({ messageZh: '麥克風被其他程式中斷，請重新開始' });
-});
-app.on('error', showError);
-
-function showError(err) {
-  $('status').classList.add('err');
-  $('status').textContent = err.messageZh ?? String(err);
-}
-
-// ─────────────────────────────────────────────── 結果
-app.on('result', ({ best, matches, features, audio }) => {
+// ── 結果 ─────────────────────────────────────────────────
+app.on('result', async ({ best, matches, features, audio }) => {
   let food;
-  let pickMethod = 'random';
   if (mode === 'random') {
     food = randomFood();
   } else if (granularity === 'food') {
     food = foodById(best.id) ?? randomFood();
-    pickMethod = 'food-profile';
   } else {
-    const picked = pickFoodFromSound(best.id, features.vector);
-    food = picked.food;
-    pickMethod = picked.method;
+    food = pickFoodFromSound(best.id, features.vector).food;
   }
 
-  if (food.sound?.color) setAccent(food.sound.color);
+  const type = food.sound;
+  state.detected = type;
+  state.accent = type?.color ?? '#ff35cf';
 
-  $('r-face').innerHTML = food.image
-    ? `<img src="${food.image}" alt="${food.name}" />`
-    : food.emoji;
-  $('r-sound').textContent = food.sound
-    ? `${food.sound.emoji} ${food.sound.name} · ${food.sound.nameEn}`
-    : '';
-  $('r-food').textContent = food.name;
-  $('r-food-en').textContent = food.nameEn;
-  $('r-asmr').innerHTML = food.asmr ? `<b>聲音</b>　${food.asmr}` : '';
-  $('r-feeling').innerHTML = food.vibe
-    ? `${food.vibe.feeling}<br /><span style="opacity:.55">氛圍分類　${food.vibe.name}</span>`
-    : '';
-  $('result').hidden = false;
-  // 重新觸發入場動畫（同一個節點再次顯示時 CSS animation 不會自己重播）
-  for (const el of $('result').querySelectorAll('.face, .sound-tag, .food, .food-en, .asmr, .feeling')) {
-    el.style.animation = 'none';
-    void el.offsetWidth;
-    el.style.animation = '';
-  }
-  $('result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  // 壓滿最短過場時間，讓掃描動畫完整跑一輪。
+  // 所有會洩漏答案的畫面更新都必須排在這之後，否則右側指示器會先亮、懸念就沒了。
+  await wait(Math.max(0, MIN_LOADING_MS - (performance.now() - analyzeStartedAt)));
+  showLoading(false);
+  revealing = false;
+  if (mode === 'match') markDetected(best.id);
+  else markDetected(null);
+  $('#recordBtn').disabled = false;
+  $('#recordBtn').textContent = '再錄一段';
 
-  const secs = audio ? (audio.durationMs / 1000).toFixed(1) : '?';
-  const how = { random: '型內隨機', profile: '型內依 profile', 'food-profile': '食物層級比對' }[pickMethod];
-  $('status').classList.remove('err');
-  $('status').textContent = mode === 'random'
-    ? `錄音 ${secs} 秒・結果為隨機`
-    : `錄音 ${secs} 秒・判定「${best.name}」・${how}`;
+  // 食物抵達胃部，揭示卡浮現
+  setPhase('stomach');
+  const rev = $('#reveal');
+  rev.style.setProperty('--c', state.accent);
+  $('#revealRing').innerHTML = food.image
+    ? `<img src="${food.image}" alt="${food.name}" />` : food.emoji;
+  $('#revealType').textContent = type ? `${type.emoji} ${type.name} · ${type.nameEn}` : '';
+  $('#revealName').textContent = food.name;
+  $('#revealEn').textContent = food.nameEn;
+  $('#revealSub').textContent = food.asmr ?? '';
+  rev.classList.remove('show');
+  void rev.offsetWidth;   // 強制重排，讓同一張卡的動畫能重播
+  rev.classList.add('show');
 
-  if (audio) {
-    $('playback').src = URL.createObjectURL(audio.blob);
-    $('playback').hidden = false;
-  }
+  renderFeatures(food, best, features, matches);
 
-  const ranking = matches
-    .map((m, i) => `  ${i + 1}. ${m.name}  相對 ${(m.relative * 100).toFixed(1)}%　(絕對 ${(m.similarity * 100).toFixed(1)}%)`)
-    .join('\n');
-  const vector = Object.entries(features.vector)
-    .map(([k, v]) => `  ${k.padEnd(12)} ${'█'.repeat(Math.round(v * 20)).padEnd(20, '·')} ${v.toFixed(2)}`)
-    .join('\n');
-  $('debug').textContent =
-    `模式：${mode === 'random' ? '隨機' : '比對'}　粒度：${granularity === 'food' ? '食物' : '聲音型態'}　選法：${how}\n` +
-    `取樣率：${features.meta.sampleRate} Hz・有效幀 ${features.meta.voicedFrames}\n\n` +
-    `${granularity === 'food' ? '食物' : '聲音型態'}排名：\n${ranking}\n\n特徵向量：\n${vector}`;
+  state.clips.push({
+    url: audio ? URL.createObjectURL(audio.blob) : null,
+    dur: audio?.durationMs ?? 0,
+    food,
+    color: state.accent,
+  });
+  renderClips();
+
+  $('#mode').textContent = mode === 'match'
+    ? `判定：${best.name}` : '隨機測試';
+  toast(mode === 'match'
+    ? `${type?.emoji ?? ''} 聽起來像「${best.name}」→ ${food.name}`
+    : `隨機給你一道：${food.name}`);
+
+  console.log('[比對]', mode, best.name,
+    matches.map((m) => `${m.name} ${(m.relative * 100).toFixed(0)}%`).join(' / '),
+    features.vector);
 });
 
-// ─────────────────────────────────────────────── 主按鈕
-$('mic').onclick = async () => {
-  startBgm();   // 第一次點擊同時解鎖音樂播放
+/** 右側面板：偵測到的食物與它的聲音特徵 */
+function renderFeatures(food, best, features, matches) {
+  const type = food.sound;
+  const color = type?.color ?? '#ff35cf';
+  // 12 維全列太雜，取數值最高的 6 個 —— 那正是這個聲音最突出的性格
+  const top = FEATURE_SPACE
+    .map((f) => ({ ...f, value: features.vector[f.key] ?? 0 }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 6);
+
+  $('#featPanel').innerHTML = `
+    <div class="feat-card" style="--c:${color}">
+      <div class="feat-head">
+        <div class="emo">${food.image ? `<img src="${food.image}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : food.emoji}</div>
+        <div><b>${food.name}</b><span>${food.nameEn}</span></div>
+      </div>
+      <div class="feat-type">${type ? `${type.emoji} ${type.name} · ${type.nameEn}` : ''}${
+        mode === 'match' ? `　${(best.relative * 100).toFixed(0)}%` : '　隨機'}</div>
+      <div class="bars">
+        ${top.map((f) => `<div class="bar" title="${f.hint}">
+          <span>${f.label}</span>
+          <span class="track"><i class="fill" style="width:${(f.value * 100).toFixed(0)}%"></i></span>
+          <span class="val">${f.value.toFixed(2)}</span>
+        </div>`).join('')}
+      </div>
+      <div class="feat-desc"><b style="color:${color}">聲音</b>　${food.asmr ?? ''}</div>
+      ${food.vibe ? `<div class="feat-desc" style="border:0;padding-bottom:0"><b style="color:${color}">氛圍</b>　${food.vibe.name}｜${food.vibe.feeling}</div>` : ''}
+    </div>`;
+
+  // 進場後再設 width，才會跑出長條的成長動畫
+  requestAnimationFrame(() => {
+    document.querySelectorAll('#featPanel .fill').forEach((el, i) => {
+      const w = el.style.width;
+      el.style.width = '0';
+      requestAnimationFrame(() => { el.style.transitionDelay = `${i * 60}ms`; el.style.width = w; });
+    });
+  });
+}
+
+function renderClips() {
+  const el = $('#clips');
+  el.innerHTML = '';
+  if (state.clips.length === 0) {
+    el.innerHTML = '<div class="empty">尚未收集聲音。<br>完成第一段錄音後，食物碎片會出現在胃部。</div>';
+    return;
+  }
+  state.clips.forEach((c, i) => {
+    const row = document.createElement('div');
+    row.className = 'clip hit';
+    row.style.setProperty('--c', c.color);
+    row.innerHTML = `<div class="emo">${c.food.emoji}</div>
+      <div><strong>${c.food.name}</strong><span>${c.food.sound?.name ?? ''} · ${fmt(c.dur)}</span></div>
+      <span class="num">${String(i + 1).padStart(2, '0')}</span>`;
+    if (c.url) row.querySelector('.emo').style.cursor = 'pointer';
+    row.querySelector('.emo').onclick = () => { if (c.url) new Audio(c.url).play(); };
+    el.appendChild(row);
+  });
+  el.scrollTop = el.scrollHeight;
+}
+
+// ── 融合（空白鍵） ───────────────────────────────────────
+function merge() {
+  if (!state.clips.length) { toast('請先錄製至少一段食物聲音'); return; }
+  setPhase('stomach');
+  state.merge = 0.01;
+  $('#mode').textContent = '胃部味覺融合完成';
+  const b = $('#mergeBtn');
+  b.classList.add('active');
+  setTimeout(() => b.classList.remove('active'), 420);
+  state.clips.forEach((c, i) => setTimeout(() => { if (c.url) new Audio(c.url).play(); }, i * 80));
+  toast(`已融合 ${state.clips.length} 段聲音：${state.clips.map((c) => c.food.name).join('、')}`);
+}
+$('#mergeBtn').onclick = merge;
+addEventListener('keydown', (e) => {
+  if (e.code === 'Space' && !e.repeat && e.target === document.body) { e.preventDefault(); merge(); }
+});
+
+// ── 錄音按鈕 ─────────────────────────────────────────────
+// connect() 必須在 click handler 裡直接呼叫，Safari／iOS 才會放行麥克風
+$('#recordBtn').onclick = async () => {
+  startBgm();
   try {
-    if (app.state === State.RECORDING) {
-      await app.stop();
-      return;
-    }
-    $('result').hidden = true;
-    $('playback').hidden = true;
+    if (app.state === State.RECORDING) { await app.stop(); return; }
+    $('#reveal').classList.remove('show');
+    showLoading(false);
+    markDetected(null);
+    setPhase('esophagus');
+    state.merge = 0;
     if (!connected) {
-      $('status').textContent = '等待麥克風授權…';
-      const info = await app.connect();
+      $('#status').textContent = '等待麥克風授權…';
+      await app.connect();
       connected = true;
-      $('status').textContent = `已連接・${info.sampleRate} Hz`;
     }
     // 先把音樂淡出再開始錄，否則喇叭的聲音會被錄進去
     if (!bgm.paused && bgm.volume > 0) {
       fadeBgm(0, 160);
       await new Promise((r) => setTimeout(r, 180));
     }
+    $('#timer').textContent = '00:00.0';
     await app.start();
   } catch (err) {
-    showError(err);
+    toast(err.messageZh ?? String(err));
   }
 };
 
-setMode('random');
+setMode('match');
+renderClips();
 </script>
 </body>
 </html>

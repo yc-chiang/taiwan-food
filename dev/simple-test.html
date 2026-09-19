@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>台灣味・聲音測試</title>
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #161922;
+    --line: #262a35;
+    --text: #e9ebf2;
+    --muted: #868ea3;
+    /* 命中聲音型態後，整頁的強調色會換成該型的顏色 */
+    --accent: #ffb454;
+    --accent-soft: rgba(255, 180, 84, .14);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 22px 16px 44px; min-height: 100dvh;
+    font-family: -apple-system, BlinkMacSystemFont, "Noto Sans TC", "PingFang TC", sans-serif;
+    background: var(--bg); color: var(--text);
+    display: flex; flex-direction: column; align-items: center; gap: 16px;
+    transition: background .6s ease;
+    overflow-x: hidden;
+  }
+  .wrap { width: 100%; max-width: 420px; }
+  header { text-align: center; }
+  h1 { font-size: 17px; font-weight: 600; margin: 0 0 3px; letter-spacing: .03em; }
+  .sub { font-size: 12px; color: var(--muted); }
+
+  /* 右上角音樂開關 */
+  #bgm-toggle {
+    position: fixed; top: 14px; right: 14px; z-index: 10;
+    width: 34px; height: 34px; border-radius: 50%; cursor: pointer;
+    border: 1px solid var(--line); background: var(--surface); color: var(--muted);
+    font-size: 14px; display: grid; place-items: center; transition: .2s;
+  }
+  #bgm-toggle[data-on="true"] { color: var(--accent); border-color: var(--accent); }
+
+  .modes { display: flex; gap: 4px; padding: 4px; background: var(--surface);
+           border: 1px solid var(--line); border-radius: 999px; }
+  .modes button { flex: 1; padding: 8px 12px; font: inherit; font-size: 13px; border: 0;
+                  border-radius: 999px; background: transparent; color: var(--muted);
+                  cursor: pointer; transition: .2s; }
+  .modes button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
+
+  /* 視覺化舞台：canvas 在底，按鈕浮在中央 */
+  .stage { position: relative; width: 280px; height: 280px; margin: 6px auto 0; }
+  #viz { position: absolute; inset: 0; width: 100%; height: 100%; }
+  #mic {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    width: 116px; height: 116px; border-radius: 50%; cursor: pointer;
+    border: 1.5px solid var(--line); background: rgba(22, 25, 34, .9);
+    color: var(--text); font: inherit; font-size: 14px; font-weight: 500;
+    display: grid; place-items: center;
+    transition: transform .18s cubic-bezier(.34,1.56,.64,1), border-color .3s, color .3s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #mic:active { transform: translate(-50%, -50%) scale(.94); }
+  #mic:disabled { opacity: .5; cursor: not-allowed; }
+  #mic[data-state="recording"] { border-color: var(--accent); color: var(--accent); }
+  .hint { font-size: 12px; color: var(--muted); text-align: center; min-height: 18px;
+          margin-top: 2px; }
+
+  /* 試試看 */
+  .try { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+  .try li { display: grid; grid-template-columns: auto 1fr; gap: 1px 10px;
+            background: var(--surface); border: 1px solid var(--line);
+            border-radius: 10px; padding: 9px 12px; font-size: 13px;
+            border-left: 3px solid var(--c); }
+  .try b { font-weight: 500; white-space: nowrap; }
+  .try span { color: var(--muted); }
+  .try em { grid-column: 1 / -1; font-style: normal; font-size: 11px; color: #5b6377; }
+  .try-title { font-size: 12px; color: var(--muted); margin: 0 0 8px; }
+
+  /* 結果卡 */
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
+          padding: 26px 20px 20px; text-align: center; position: relative; overflow: hidden; }
+  .card[hidden] { display: none; }
+  /* 命中型態的色光從卡片上緣暈開 */
+  .card::before { content: ''; position: absolute; top: -60px; left: 50%;
+                  transform: translateX(-50%); width: 200px; height: 140px;
+                  background: radial-gradient(ellipse, var(--accent-soft), transparent 70%);
+                  pointer-events: none; }
+  .face { width: 108px; height: 108px; margin: 0 auto 14px; border-radius: 50%;
+          background: #0a0c11; border: 1px solid var(--line); position: relative;
+          display: grid; place-items: center; font-size: 54px; line-height: 1;
+          animation: pop .5s cubic-bezier(.34,1.56,.64,1) both; }
+  .face img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+  @keyframes pop { from { opacity: 0; transform: scale(.55); } }
+  .sound-tag { font-size: 12px; color: var(--accent); letter-spacing: .06em;
+               margin-bottom: 8px; animation: fadeUp .45s .1s both; }
+  .food { font-size: 31px; font-weight: 600; margin: 0 0 3px;
+          animation: fadeUp .45s .16s both; }
+  .food-en { font-size: 12px; color: var(--muted); animation: fadeUp .45s .22s both; }
+  .asmr { font-size: 12px; color: var(--muted); margin-top: 12px;
+          animation: fadeUp .45s .28s both; }
+  .asmr b { color: var(--accent); font-weight: 500; }
+  .feeling { font-size: 12px; color: var(--muted); line-height: 1.7; text-align: left;
+             border-top: 1px solid var(--line); padding-top: 13px; margin-top: 14px;
+             animation: fadeUp .45s .34s both; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } }
+
+  .status { font-size: 11px; color: var(--muted); text-align: center; }
+  .status.err { color: #ff8a80; }
+  details { margin-top: 2px; }
+  summary { font-size: 12px; color: var(--muted); cursor: pointer; padding: 6px 0; }
+  pre { font-size: 11px; line-height: 1.55; background: #080a0e; border: 1px solid var(--line);
+        border-radius: 8px; padding: 12px; overflow-x: auto; color: var(--muted);
+        white-space: pre-wrap; margin: 6px 0 0; }
+  select { width: 100%; font: inherit; font-size: 12px; padding: 8px 10px; margin-top: 6px;
+           background: #080a0e; color: var(--muted); border: 1px solid var(--line);
+           border-radius: 8px; }
+  audio { width: 100%; margin-top: 10px; }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<button id="bgm-toggle" data-on="false" aria-label="背景音樂開關">♪</button>
+
+<div class="wrap">
+  <header>
+    <h1>台灣味・聲音測試</h1>
+    <div class="sub">發出聲音，跑出對應的台灣小吃</div>
+  </header>
+</div>
+
+<div class="wrap modes" role="group" aria-label="模式">
+  <button id="mode-random" aria-pressed="true">隨機模式</button>
+  <button id="mode-match" aria-pressed="false">比對模式</button>
+</div>
+
+<div class="stage">
+  <canvas id="viz"></canvas>
+  <button id="mic" data-state="idle"><span id="mic-label">開始收音</span></button>
+</div>
+<div class="hint" id="hint">第一次會詢問麥克風權限</div>
+
+<div class="wrap">
+  <div class="card" id="result" hidden>
+    <div class="face" id="r-face"></div>
+    <div class="sound-tag" id="r-sound"></div>
+    <p class="food" id="r-food"></p>
+    <div class="food-en" id="r-food-en"></div>
+    <div class="asmr" id="r-asmr"></div>
+    <div class="feeling" id="r-feeling"></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <p class="try-title">試試看這幾種聲音</p>
+  <ul class="try" id="try-list"></ul>
+</div>
+
+<div class="wrap">
+  <div class="status" id="status">尚未連接麥克風</div>
+  <details>
+    <summary>除錯資訊</summary>
+    <select id="devices" disabled><option>尚未授權</option></select>
+    <audio id="playback" controls hidden></audio>
+    <pre id="debug">—</pre>
+  </details>
+</div>
+
+<script type="module">
+import { createFoodVoiceMatcher, State } from './src/app.js';
+import {
+  randomFood, pickFoodFromSound, foodById,
+  foodsAsMatchItems, matchGranularity, foodsBySound,
+} from './src/data/foods.js';
+import { soundTypes, soundTypesAsMatchItems } from './src/data/sound-types.js';
+
+const $ = (id) => document.getElementById(id);
+
+/** 測試階段用手動模式：一顆按鈕控制開始與結束，不啟用 VAD 自動斷句。 */
+const app = createFoodVoiceMatcher({
+  vad: { enabled: false },
+  recording: { maxDurationMs: 15000 },
+});
+
+const granularity = matchGranularity();
+app.loadFoods(granularity === 'food' ? foodsAsMatchItems() : soundTypesAsMatchItems());
+
+$('try-list').innerHTML = soundTypes
+  .map((t) => `<li style="--c:${t.color}"><b>${t.emoji} ${t.name}</b><span>${t.tryThis}</span>
+    <em>${foodsBySound(t.id).map((f) => f.name).join('、')}</em></li>`)
+  .join('');
+
+let mode = 'random';
+let connected = false;
+
+// ─────────────────────────────────────────────── 背景音樂
+/**
+ * 常態播放的環境音。兩個關鍵處理：
+ *   1. 瀏覽器的 autoplay 政策禁止未經互動就出聲，所以等第一次點擊才啟動
+ *   2. 收音期間必須靜音 —— 我們刻意關閉了瀏覽器的回音消除（那會破壞音色特徵），
+ *      喇叭放出來的音樂會被麥克風原封不動錄進去，污染比對結果
+ */
+const BGM_VOLUME = 0.16;
+const bgm = new Audio('./assets/bgm.mp3');
+bgm.loop = true;
+bgm.volume = 0;
+bgm.preload = 'auto';
+let bgmWanted = true;
+let fadeTimer = null;
+
+function fadeBgm(target, ms = 400) {
+  clearInterval(fadeTimer);
+  const from = bgm.volume;
+  const steps = Math.max(1, Math.round(ms / 40));
+  let i = 0;
+  fadeTimer = setInterval(() => {
+    i += 1;
+    bgm.volume = Math.max(0, Math.min(1, from + (target - from) * (i / steps)));
+    if (i >= steps) clearInterval(fadeTimer);
+  }, 40);
+}
+
+async function startBgm() {
+  if (!bgmWanted || !bgm.paused) return;
+  try {
+    await bgm.play();
+    fadeBgm(BGM_VOLUME, 1200);
+    $('bgm-toggle').dataset.on = 'true';
+  } catch {
+    // 仍被 autoplay 政策擋著，等下一次互動再試
+  }
+}
+
+$('bgm-toggle').onclick = () => {
+  bgmWanted = !bgmWanted;
+  $('bgm-toggle').dataset.on = String(bgmWanted);
+  if (bgmWanted) startBgm();
+  else { fadeBgm(0, 300); setTimeout(() => bgm.pause(), 320); }
+};
+
+// ─────────────────────────────────────────────── 視覺化
+const canvas = $('viz');
+const ctx = canvas.getContext('2d');
+let latest = null;
+let accent = '#ffb454';
+let smoothed = null;   // 平滑後的頻譜，讓動畫不會抖
+let phase = 0;
+
+function sizeCanvas() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = canvas.clientWidth * dpr;
+  canvas.height = canvas.clientHeight * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+sizeCanvas();
+addEventListener('resize', sizeCanvas);
+
+app.on('level', (l) => { latest = l; });
+
+const BARS = 72;
+function draw() {
+  requestAnimationFrame(draw);
+  const w = canvas.clientWidth;
+  const h = canvas.clientHeight;
+  const cx = w / 2;
+  const cy = h / 2;
+  const base = 62;          // 內圈半徑，剛好貼著按鈕外緣
+  ctx.clearRect(0, 0, w, h);
+  phase += 0.012;
+
+  const state = app.state;
+  const active = state === State.RECORDING || state === State.LISTENING;
+
+  if (!smoothed) smoothed = new Float32Array(BARS);
+
+  for (let i = 0; i < BARS; i += 1) {
+    let target;
+    if (active && latest?.frequency) {
+      // 只取前 60% 的頻段：高頻大多是空的，全取會有一半的柱子不動
+      const idx = Math.floor((i / BARS) * latest.frequency.length * 0.6);
+      target = (latest.frequency[idx] / 255) ** 1.4 * 46;
+    } else if (state === State.ANALYZING) {
+      // 分析中：一圈跑動的波，讓等待有事情在發生的感覺
+      target = 8 + Math.sin(phase * 6 - (i / BARS) * Math.PI * 4) * 6;
+    } else {
+      // 待機：緩慢呼吸
+      target = 4 + Math.sin(phase * 2 + i * 0.25) * 2.5;
+    }
+    smoothed[i] += (target - smoothed[i]) * (active ? 0.35 : 0.08);
+  }
+
+  ctx.lineCap = 'round';
+  for (let i = 0; i < BARS; i += 1) {
+    const angle = (i / BARS) * Math.PI * 2 - Math.PI / 2;
+    const len = Math.max(1.5, smoothed[i]);
+    const x1 = cx + Math.cos(angle) * base;
+    const y1 = cy + Math.sin(angle) * base;
+    const x2 = cx + Math.cos(angle) * (base + len);
+    const y2 = cy + Math.sin(angle) * (base + len);
+    ctx.strokeStyle = active ? accent : '#2c313d';
+    ctx.globalAlpha = active ? 0.35 + (len / 46) * 0.65 : 0.55;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  // 錄音時的外圈光暈，強度跟著音量走
+  if (active && latest) {
+    const pct = Math.max(0, Math.min(1, (latest.db + 60) / 50));
+    ctx.beginPath();
+    ctx.arc(cx, cy, base + 52 + pct * 14, 0, Math.PI * 2);
+    ctx.strokeStyle = accent;
+    ctx.globalAlpha = pct * 0.28;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+}
+draw();
+
+/** 把整頁的強調色換成命中型態的顏色 */
+function setAccent(hex) {
+  accent = hex;
+  document.documentElement.style.setProperty('--accent', hex);
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  document.documentElement.style.setProperty('--accent-soft', `rgba(${r},${g},${b},.14)`);
+}
+
+// ─────────────────────────────────────────────── 模式
+function setMode(next) {
+  mode = next;
+  $('mode-random').setAttribute('aria-pressed', String(next === 'random'));
+  $('mode-match').setAttribute('aria-pressed', String(next === 'match'));
+  $('hint').textContent =
+    next === 'random'
+      ? '錄音流程照跑，結果隨機給一道（測試用）'
+      : granularity === 'food'
+        ? '依聲音特徵直接比對 20 道食物'
+        : '判斷你發出的是哪一種聲音型態，再給該型的食物';
+}
+$('mode-random').onclick = () => setMode('random');
+$('mode-match').onclick = () => setMode('match');
+
+// ─────────────────────────────────────────────── 環境
+const support = app.support;
+if (!support.supported) {
+  $('mic').disabled = true;
+  $('status').classList.add('err');
+  $('status').textContent =
+    support.issues[0] === 'INSECURE_CONTEXT'
+      ? '需要 HTTPS 或 localhost 才能使用麥克風'
+      : '這個瀏覽器不支援錄音';
+}
+$('debug').textContent = JSON.stringify(support, null, 1);
+
+// ─────────────────────────────────────────────── 狀態
+const LABELS = {
+  [State.IDLE]: '開始收音', [State.CONNECTING]: '連接中…', [State.READY]: '開始收音',
+  [State.LISTENING]: '請發聲', [State.RECORDING]: '結束收音',
+  [State.ANALYZING]: '分析中…', [State.RESULT]: '再錄一次', [State.ERROR]: '重試',
+};
+
+app.on('state', ({ to, context }) => {
+  $('mic-label').textContent = LABELS[to] ?? to;
+  $('mic').dataset.state = to;
+  $('mic').disabled = to === State.CONNECTING || to === State.ANALYZING;
+  if (to === State.RECORDING) {
+    $('status').classList.remove('err');
+    $('status').textContent = '收音中…';
+  }
+  // 錄完就把音樂放回來
+  if (to !== State.RECORDING && to !== State.LISTENING && bgmWanted && !bgm.paused) {
+    fadeBgm(BGM_VOLUME, 700);
+  }
+  if (context.reason) $('status').textContent = `已停止（${context.reason}）`;
+});
+
+app.on('progress', ({ elapsedMs }) => {
+  $('status').textContent = `收音中… ${(elapsedMs / 1000).toFixed(1)} 秒`;
+});
+
+app.on('devices', ({ devices, activeDeviceId }) => {
+  $('devices').disabled = devices.length < 2;
+  $('devices').innerHTML = devices
+    .map((d) => `<option value="${d.deviceId}"${d.deviceId === activeDeviceId ? ' selected' : ''}>${d.label}</option>`)
+    .join('');
+});
+$('devices').onchange = (e) => app.switchDevice(e.target.value).catch(showError);
+
+app.on('interrupted', ({ muted }) => {
+  if (muted) showError({ messageZh: '麥克風被其他程式中斷，請重新開始' });
+});
+app.on('error', showError);
+
+function showError(err) {
+  $('status').classList.add('err');
+  $('status').textContent = err.messageZh ?? String(err);
+}
+
+// ─────────────────────────────────────────────── 結果
+app.on('result', ({ best, matches, features, audio }) => {
+  let food;
+  let pickMethod = 'random';
+  if (mode === 'random') {
+    food = randomFood();
+  } else if (granularity === 'food') {
+    food = foodById(best.id) ?? randomFood();
+    pickMethod = 'food-profile';
+  } else {
+    const picked = pickFoodFromSound(best.id, features.vector);
+    food = picked.food;
+    pickMethod = picked.method;
+  }
+
+  if (food.sound?.color) setAccent(food.sound.color);
+
+  $('r-face').innerHTML = food.image
+    ? `<img src="${food.image}" alt="${food.name}" />`
+    : food.emoji;
+  $('r-sound').textContent = food.sound
+    ? `${food.sound.emoji} ${food.sound.name} · ${food.sound.nameEn}`
+    : '';
+  $('r-food').textContent = food.name;
+  $('r-food-en').textContent = food.nameEn;
+  $('r-asmr').innerHTML = food.asmr ? `<b>聲音</b>　${food.asmr}` : '';
+  $('r-feeling').innerHTML = food.vibe
+    ? `${food.vibe.feeling}<br /><span style="opacity:.55">氛圍分類　${food.vibe.name}</span>`
+    : '';
+  $('result').hidden = false;
+  // 重新觸發入場動畫（同一個節點再次顯示時 CSS animation 不會自己重播）
+  for (const el of $('result').querySelectorAll('.face, .sound-tag, .food, .food-en, .asmr, .feeling')) {
+    el.style.animation = 'none';
+    void el.offsetWidth;
+    el.style.animation = '';
+  }
+  $('result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  const secs = audio ? (audio.durationMs / 1000).toFixed(1) : '?';
+  const how = { random: '型內隨機', profile: '型內依 profile', 'food-profile': '食物層級比對' }[pickMethod];
+  $('status').classList.remove('err');
+  $('status').textContent = mode === 'random'
+    ? `錄音 ${secs} 秒・結果為隨機`
+    : `錄音 ${secs} 秒・判定「${best.name}」・${how}`;
+
+  if (audio) {
+    $('playback').src = URL.createObjectURL(audio.blob);
+    $('playback').hidden = false;
+  }
+
+  const ranking = matches
+    .map((m, i) => `  ${i + 1}. ${m.name}  相對 ${(m.relative * 100).toFixed(1)}%　(絕對 ${(m.similarity * 100).toFixed(1)}%)`)
+    .join('\n');
+  const vector = Object.entries(features.vector)
+    .map(([k, v]) => `  ${k.padEnd(12)} ${'█'.repeat(Math.round(v * 20)).padEnd(20, '·')} ${v.toFixed(2)}`)
+    .join('\n');
+  $('debug').textContent =
+    `模式：${mode === 'random' ? '隨機' : '比對'}　粒度：${granularity === 'food' ? '食物' : '聲音型態'}　選法：${how}\n` +
+    `取樣率：${features.meta.sampleRate} Hz・有效幀 ${features.meta.voicedFrames}\n\n` +
+    `${granularity === 'food' ? '食物' : '聲音型態'}排名：\n${ranking}\n\n特徵向量：\n${vector}`;
+});
+
+// ─────────────────────────────────────────────── 主按鈕
+$('mic').onclick = async () => {
+  startBgm();   // 第一次點擊同時解鎖音樂播放
+  try {
+    if (app.state === State.RECORDING) {
+      await app.stop();
+      return;
+    }
+    $('result').hidden = true;
+    $('playback').hidden = true;
+    if (!connected) {
+      $('status').textContent = '等待麥克風授權…';
+      const info = await app.connect();
+      connected = true;
+      $('status').textContent = `已連接・${info.sampleRate} Hz`;
+    }
+    // 先把音樂淡出再開始錄，否則喇叭的聲音會被錄進去
+    if (!bgm.paused && bgm.volume > 0) {
+      fadeBgm(0, 160);
+      await new Promise((r) => setTimeout(r, 180));
+    }
+    await app.start();
+  } catch (err) {
+    showError(err);
+  }
+};
+
+setMode('random');
+</script>
+</body>
+</html>
