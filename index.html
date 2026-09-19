@@ -170,7 +170,7 @@
 import { createFoodVoiceMatcher, State, FEATURE_SPACE } from './src/app.js';
 import {
   randomFood, pickFoodFromSound, foodById,
-  foodsAsMatchItems, matchGranularity, foodsBySound,
+  foodsAsMatchItems, matchGranularity, foodsBySound, activeSoundTypeIds,
 } from './src/data/foods.js';
 import { soundTypes, soundTypesAsMatchItems } from './src/data/sound-types.js';
 
@@ -196,7 +196,9 @@ const app = createFoodVoiceMatcher({
   recording: { maxDurationMs: 15000 },
 });
 const granularity = matchGranularity();
-app.loadFoods(granularity === 'food' ? foodsAsMatchItems() : soundTypesAsMatchItems());
+// 只把「還有食物的聲音型態」放進比對，任何聲音都必然落在有食物的型態上
+const liveTypeIds = activeSoundTypeIds();
+app.loadFoods(granularity === 'food' ? foodsAsMatchItems() : soundTypesAsMatchItems(liveTypeIds));
 
 let mode = 'match';
 let connected = false;
@@ -217,6 +219,7 @@ function showLoading(on, text = '分析聲音質地') {
 
 // ── 聲音型態指示器 ───────────────────────────────────────
 $('#soundTypes').innerHTML = soundTypes
+  .filter((t) => liveTypeIds.includes(t.id))
   .map((t) => `<button class="preset" data-type="${t.id}" style="--c:${t.color}" type="button">
       <b><i class="dot-c"></i>${t.emoji} ${t.name}</b>
       <span>${t.tryThis}</span>

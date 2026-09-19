@@ -150,9 +150,16 @@ export const soundTypes = [
 
 export const soundTypeById = new Map(soundTypes.map((t) => [t.id, t]));
 
-/** 轉成 Matcher 吃的格式。 */
-export function soundTypesAsMatchItems() {
-  return soundTypes.map((t) => ({
+/**
+ * 轉成 Matcher 吃的格式。
+ * @param {string[]} [onlyIds] 只保留這些型態 —— 傳入「目前還有食物的型態」，
+ *   比對就會收斂到它們之間，任何聲音都必然落在有食物的型態上。
+ */
+export function soundTypesAsMatchItems(onlyIds) {
+  const list = onlyIds?.length
+    ? soundTypes.filter((t) => onlyIds.includes(t.id))
+    : soundTypes;
+  return list.map((t) => ({
     id: t.id,
     name: t.name,
     profile: t.profile,

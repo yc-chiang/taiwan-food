@@ -66,9 +66,34 @@ export const foods = [
   { id: 'wheel-cake', stage: 'assets/foods/wheel-cake.jpg', sound: 'soft',        name: '車輪餅',   nameEn: 'Wheel Cake',                 group: 5, emoji: '🥮', image: null, asmr: '烤模扣出、綿密內餡',     profile: null },
 ];
 
+/**
+ * ── 只保留指定的食物 ──
+ *
+ * 列出食物 id 就只有這幾道會參與；空陣列代表 20 道全開。
+ * 例如只想留有畫好舞台圖的那幾道：
+ *
+ *   export const activeFoodIds = ['soup-dumplings', 'stinky-tofu', 'fried-chicken'];
+ *
+ * 比對會自動收斂到「這些食物所屬的聲音型態」之間 ——
+ * 所以不管使用者發出什麼聲音，結果一定落在保留的食物裡，不會判到空的型態。
+ */
+export const activeFoodIds = [];
+
+/** 目前參與比對與呈現的食物。 */
+export function activeFoods() {
+  if (activeFoodIds.length === 0) return foods;
+  const keep = new Set(activeFoodIds);
+  return foods.filter((f) => keep.has(f.id));
+}
+
+/** 目前還有食物的聲音型態 id。比對只在這些型態之間分勝負。 */
+export function activeSoundTypeIds() {
+  return [...new Set(activeFoods().map((f) => f.sound))];
+}
+
 /** 取得某個氛圍分類底下的所有食物。 */
 export function foodsByGroup(groupId) {
-  return foods.filter((f) => f.group === groupId);
+  return activeFoods().filter((f) => f.group === groupId);
 }
 
 /** 把食物補上聲音型態與氛圍分類的完整資訊，方便 UI 直接顯示。 */
@@ -82,7 +107,7 @@ export function withGroup(food) {
 
 /** 取得某個聲音型態底下的所有食物。 */
 export function foodsBySound(soundId) {
-  return foods.filter((f) => f.sound === soundId);
+  return activeFoods().filter((f) => f.sound === soundId);
 }
 
 /**
@@ -112,7 +137,7 @@ export function pickFoodFromSound(soundId, vector, weights = DEFAULT_WEIGHTS) {
 
 /** 有填 profile 的食物。決定要走食物層級還是分類層級比對。 */
 export function foodsWithProfile() {
-  return foods.filter((f) => f.profile && Object.keys(f.profile).length > 0);
+  return activeFoods().filter((f) => f.profile && Object.keys(f.profile).length > 0);
 }
 
 /**
@@ -137,7 +162,8 @@ export function foodsAsMatchItems() {
 
 /** 從全部 20 道中隨機挑一道。 */
 export function randomFood() {
-  return withGroup(foods[Math.floor(Math.random() * foods.length)]);
+  const pool = activeFoods();
+  return withGroup(pool[Math.floor(Math.random() * pool.length)]);
 }
 
 /** 從指定分類中隨機挑一道。 */
@@ -174,7 +200,7 @@ export function pickFoodFromGroup(groupId, vector, weights = DEFAULT_WEIGHTS) {
 
 /** 依 id 取回完整食物資料（含分類）。 */
 export function foodById(id) {
-  const food = foods.find((f) => f.id === id);
+  const food = activeFoods().find((f) => f.id === id);
   return food ? withGroup(food) : null;
 }
 
