@@ -85,15 +85,14 @@
       background:radial-gradient(ellipse at center,rgba(3,1,8,.92) 34%,rgba(3,1,8,.72) 56%,rgba(3,1,8,.28) 74%,transparent 86%);
       -webkit-backdrop-filter:blur(6px) saturate(.75);backdrop-filter:blur(6px) saturate(.75)}
     .reveal.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
-    .reveal .ring{width:176px;height:176px;margin:0 auto 4px;border-radius:50%;display:grid;place-items:center;position:relative}
-    /* 食物由粒子聚合而成，和背景的霓虹粒子同一種視覺語言 */
-    .reveal .ring canvas{width:176px;height:176px;display:block}
-    .reveal .ring:before{content:"";position:absolute;inset:14px;border-radius:50%;
-      background:radial-gradient(circle,color-mix(in srgb,var(--c,#ff35cf) 20%,transparent),transparent 68%);
+    .reveal .ring{width:140px;height:140px;margin:0 auto 14px;border-radius:50%;
+      display:grid;place-items:center;font-size:70px;line-height:1;position:relative;
+      background:radial-gradient(circle,color-mix(in srgb,var(--c,#ff35cf) 24%,transparent),rgba(6,2,14,.8) 70%);
+      border:1px solid var(--c,#ff35cf);
+      box-shadow:0 0 48px color-mix(in srgb,var(--c,#ff35cf) 42%,transparent),inset 0 0 32px color-mix(in srgb,var(--c,#ff35cf) 16%,transparent);
       animation:auraPulse 3.2s ease-in-out infinite}
-    @keyframes auraPulse{50%{transform:scale(1.12);opacity:.65}}
-    .reveal .ring img{width:150px;height:150px;object-fit:cover;border-radius:50%;
-      box-shadow:0 0 44px color-mix(in srgb,var(--c,#ff35cf) 45%,transparent)}
+    @keyframes auraPulse{50%{box-shadow:0 0 66px color-mix(in srgb,var(--c,#ff35cf) 55%,transparent),inset 0 0 32px color-mix(in srgb,var(--c,#ff35cf) 16%,transparent)}}
+    .reveal .ring img{width:100%;height:100%;object-fit:cover;border-radius:50%}
     .reveal .type{font-size:11.5px;letter-spacing:.18em;color:var(--c,#ff35cf);margin-bottom:9px;font-weight:600;text-shadow:0 2px 6px #000,0 0 18px color-mix(in srgb,var(--c,#ff35cf) 75%,transparent)}
     .reveal .name{font-size:32px;font-weight:700;margin:0;color:#fff;text-shadow:0 2px 6px #000,0 4px 26px #000,0 0 34px color-mix(in srgb,var(--c,#ff35cf) 55%,transparent)}
     .reveal .en{font-size:12.5px;color:#e6dcf5;letter-spacing:.08em;margin-top:5px;text-shadow:0 2px 6px #000,0 0 14px #000}
@@ -122,8 +121,8 @@
       <div class="status-card"><div class="timer" id="timer">00:00.0</div><div class="status-label" id="status">麥克風尚未啟動</div></div>
       <div class="meter" id="meter" aria-label="聲音音量"></div>
       <button class="primary" id="recordBtn">開始錄音</button>
-      <p class="helper">對著麥克風發出食物的聲音 —— 咬碎、油炸、吸湯、咀嚼或摩擦。系統會判斷聲音質地，找出最接近的台灣小吃。</p>
-      <div class="chips"><span class="chip">咀嚼</span><span class="chip">酥脆</span><span class="chip">油炸</span><span class="chip">湯汁</span><span class="chip">摩擦</span></div>
+      <p class="helper">對著麥克風唸出狀聲詞 —— 咻咻咻、哈哈哈、喀滋喀滋。系統會判斷聲音質地，找出對應的台灣小吃。</p>
+      <div class="chips"><span class="chip">咻咻咻</span><span class="chip">哈哈哈</span><span class="chip">喀滋喀滋</span></div>
     </section>
 
     <section class="stage" aria-label="霓虹人體聲音視覺">
@@ -221,7 +220,7 @@ function showLoading(on, text = '分析聲音質地') {
 $('#soundTypes').innerHTML = soundTypes
   .filter((t) => liveTypeIds.includes(t.id))
   .map((t) => `<button class="preset" data-type="${t.id}" style="--c:${t.color}" type="button">
-      <b><i class="dot-c"></i>${t.emoji} ${t.name}</b>
+      <b><i class="dot-c"></i>${t.emoji} ${t.onomatopoeia ?? t.name}</b>
       <span>${t.tryThis}</span>
     </button>`)
   .join('');
@@ -421,111 +420,6 @@ function loadStageImage(food) {
   });
 }
 
-// ── 食物粒子 ─────────────────────────────────────────────
-/**
- * 把 emoji 畫到離屏 canvas，取出不透明像素的座標當作粒子的目標點，
- * 粒子從四散的位置飛入聚合成食物形狀 —— 和背景的霓虹粒子是同一種視覺語言。
- *
- * 顏色刻意「不」由 emoji 主導：各系統的 emoji 字體差異極大（macOS 彩色、
- * 某些環境是單色），跟著它走視覺會不穩定。改成以聲音型態色與霓虹雙色為主，
- * emoji 像素只提供形狀與明暗，這樣不管在哪台機器上都是同一套霓虹調性。
- */
-const FOOD_CANVAS_SIZE = 176;
-const PARTICLE_STEP = 3;        // 取樣間距，越小粒子越密、也越吃效能
-
-const foodCanvas = document.createElement('canvas');
-const fctx = foodCanvas.getContext('2d');
-const fdpr = Math.min(devicePixelRatio || 1, 2);
-foodCanvas.width = FOOD_CANVAS_SIZE * fdpr;
-foodCanvas.height = FOOD_CANVAS_SIZE * fdpr;
-fctx.scale(fdpr, fdpr);
-
-let particles = [];
-let particleRaf = 0;
-
-function hexToRgb(hex) {
-  return [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
-}
-
-function spawnFoodParticles(emoji, accentHex) {
-  const S = FOOD_CANVAS_SIZE;
-  const off = document.createElement('canvas');
-  off.width = off.height = S;
-  const octx = off.getContext('2d', { willReadFrequently: true });
-  octx.font = `${Math.round(S * 0.78)}px "Apple Color Emoji","Noto Color Emoji",serif`;
-  octx.textAlign = 'center';
-  octx.textBaseline = 'middle';
-  octx.fillText(emoji, S / 2, S / 2);
-
-  const data = octx.getImageData(0, 0, S, S).data;
-  const accent = hexToRgb(accentHex);
-  const CYAN = [23, 247, 255];
-  const PINK = [255, 53, 207];
-  const pts = [];
-  for (let y = 0; y < S; y += PARTICLE_STEP) {
-    for (let x = 0; x < S; x += PARTICLE_STEP) {
-      const i = (y * S + x) * 4;
-      if (data[i + 3] < 90) continue;
-
-      // emoji 像素的亮度只用來決定這顆粒子的明暗，不決定色相
-      const lum = (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114) / 255;
-      const k = Math.random();
-      const base = k < 0.55 ? accent : k < 0.82 ? CYAN : PINK;
-      const gain = 0.5 + lum * 0.75;
-      const col = base.map((c) => Math.round(Math.min(255, c * gain))).join(',');
-
-      const ang = Math.random() * Math.PI * 2;
-      const dist = S * (0.5 + Math.random() * 0.7);
-      pts.push({
-        tx: x, ty: y,
-        x: S / 2 + Math.cos(ang) * dist,
-        y: S / 2 + Math.sin(ang) * dist,
-        r: 0.8 + Math.random() * 1.5,
-        ease: 0.045 + Math.random() * 0.05,
-        // 每顆粒子自己的漂移相位，聚合後才不會完全靜止
-        ph: Math.random() * Math.PI * 2,
-        sp: 0.6 + Math.random() * 0.8,
-        col,
-      });
-    }
-  }
-  particles = pts;
-  cancelAnimationFrame(particleRaf);
-  drawParticles();
-}
-
-function drawParticles(t = 0) {
-  particleRaf = requestAnimationFrame(drawParticles);
-  const S = FOOD_CANVAS_SIZE;
-  fctx.clearRect(0, 0, S, S);
-  fctx.globalCompositeOperation = 'lighter';
-  const now = t * 0.001;
-
-  for (const p of particles) {
-    p.x += (p.tx - p.x) * p.ease;
-    p.y += (p.ty - p.y) * p.ease;
-    // 聚合完成後的微幅呼吸，避免畫面死掉
-    const dx = Math.sin(now * p.sp + p.ph) * 0.9;
-    const dy = Math.cos(now * p.sp * 0.8 + p.ph) * 0.9;
-    const x = p.x + dx;
-    const y = p.y + dy;
-    // 外圈暈 + 內核，用 lighter 疊加出輝光，比 shadowBlur 快非常多
-    fctx.fillStyle = `rgba(${p.col},.10)`;
-    fctx.beginPath();
-    fctx.arc(x, y, p.r * 4.2, 0, 7);
-    fctx.fill();
-    fctx.fillStyle = `rgba(${p.col},.30)`;
-    fctx.beginPath();
-    fctx.arc(x, y, p.r * 2.1, 0, 7);
-    fctx.fill();
-    fctx.fillStyle = `rgba(${p.col},.95)`;
-    fctx.beginPath();
-    fctx.arc(x, y, p.r, 0, 7);
-    fctx.fill();
-  }
-  fctx.globalCompositeOperation = 'source-over';
-}
-
 // ── 背景音樂 ─────────────────────────────────────────────
 /**
  * 收音期間必須靜音：我們刻意關掉瀏覽器的回音消除（那會破壞音色特徵），
@@ -572,7 +466,7 @@ function setMode(next) {
   $('#modeMatch').setAttribute('aria-pressed', String(next === 'match'));
   $('#modeRandom').setAttribute('aria-pressed', String(next === 'random'));
   $('#typeHelper').textContent = next === 'match'
-    ? '錄音結束後，偵測到的聲音型態會在上方亮起，並從該型的食物中給出結果。'
+    ? '錄音結束後，偵測到的聲音型態會在上方亮起，並給出對應的食物。'
     : '隨機模式：錄音與分析流程照跑，但結果隨機給一道，用來確認流程是否順暢。';
 }
 $('#modeMatch').onclick = () => setMode('match');
@@ -682,14 +576,16 @@ app.on('result', async ({ best, matches, features, audio }) => {
     $('#sceneFood').classList.add('active');
     rev.classList.add('with-stage');
   } else {
-    // 還沒有圖：用 emoji 的形狀把霓虹粒子聚合成食物
+    // 還沒有舞台圖：直接顯示食物 emoji
     $('#sceneFood').classList.remove('active');
     rev.classList.remove('with-stage');
-    $('#revealRing').innerHTML = '';
-    $('#revealRing').appendChild(foodCanvas);
-    spawnFoodParticles(food.emoji, state.accent);
+    $('#revealRing').textContent = food.emoji;
   }
-  $('#revealType').textContent = type ? `${type.emoji} ${type.name} · ${type.nameEn}` : '';
+  $('#revealType').innerHTML = type
+    ? (type.onomatopoeia
+        ? `${type.emoji} ${type.onomatopoeia}<span style="opacity:.6"> · ${type.name}</span>`
+        : `${type.emoji} ${type.name} · ${type.nameEn}`)
+    : '';
   $('#revealName').textContent = food.name;
   $('#revealEn').textContent = food.nameEn;
   $('#revealSub').textContent = food.asmr ?? '';
@@ -708,9 +604,9 @@ app.on('result', async ({ best, matches, features, audio }) => {
   renderClips();
 
   $('#mode').textContent = mode === 'match'
-    ? `判定：${best.name}` : '隨機測試';
+    ? `判定：${type?.onomatopoeia ?? best.name}` : '隨機測試';
   toast(mode === 'match'
-    ? `${type?.emoji ?? ''} 聽起來像「${best.name}」→ ${food.name}`
+    ? `${type?.emoji ?? ''} 聽到「${type?.onomatopoeia ?? best.name}」→ ${food.name}`
     : `隨機給你一道：${food.name}`);
 
   console.log('[比對]', mode, best.name,
@@ -734,7 +630,7 @@ function renderFeatures(food, best, features, matches) {
         <div class="emo">${food.image ? `<img src="${food.image}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : food.emoji}</div>
         <div><b>${food.name}</b><span>${food.nameEn}</span></div>
       </div>
-      <div class="feat-type">${type ? `${type.emoji} ${type.name} · ${type.nameEn}` : ''}${
+      <div class="feat-type">${type ? `${type.emoji} ${type.onomatopoeia ?? type.name} · ${type.name}` : ''}${
         mode === 'match' ? `　${(best.relative * 100).toFixed(0)}%` : '　隨機'}</div>
       <div class="bars">
         ${top.map((f) => `<div class="bar" title="${f.hint}">

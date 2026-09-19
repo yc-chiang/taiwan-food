@@ -13,8 +13,13 @@
  *   柔軟 vs Q彈    兩者都低頻低音量，差別在有沒有咀嚼的顆粒感
  *                  柔軟 roughness .05 / attack 0；Q彈 roughness .55 / attack 1.0
  *
- * 這些數值是「實測校準」來的：我合成六段對應質地的音訊跑過特徵抽取，
+ * 這些數值是「實測校準」來的：合成對應的音訊跑過特徵抽取，
  * 再以實測結果回頭訂定目標值，而不是憑感覺填。這樣才對得上抽取器的實際行為。
+ *
+ * ⚠️ liquid / soft / crispy 三型目前是針對**特定狀聲詞**校準的，不是通用質地：
+ *      咻咻咻 → 牛肉麵　哈哈哈 → 小籠包　喀滋喀滋 → 鳳梨酥
+ *    因為 activeFoodIds 只留了這三道，比對只在這三型之間分勝負。
+ *    之後若把 20 道全開，這三型要改回通用質地的數值才會合理。
  *
  * 已知較弱的一組：油炸 vs 沙沙，兩者都是持續的高頻噪音，
  * 主要靠音量區分（油炸 .85 / 沙沙 .35）。音量會受麥克風增益影響，
@@ -26,23 +31,23 @@
 export const soundTypes = [
   {
     id: 'crispy',
+    onomatopoeia: '喀滋喀滋',
     color: '#ffb454',
     name: '酥脆',
     nameEn: 'Crispy',
     emoji: '💥',
     /** 給 UI 顯示「試試看發出什麼聲音」 */
-    tryThis: '喀啦喀啦、咬碎脆片',
-    description: '一下一下、短促而明亮的爆裂聲。咬下去的瞬間碎開。',
+    tryThis: '喀滋喀滋（用力咬碎的節奏）',
+    description: '一下一下的爆裂加上短促摩擦尾音，乾、脆、有節奏。',
     profile: {
-      loudness: 0.55,
-      dynamics: 0.7,
-      brightness: 0.95,
-      roughness: 0.95,
-      sharpness: 0.6,
-      rhythm: 0.8,
-      attack: 1.0,
-      sustain: 0.25,
-      tonality: 0.05,
+      loudness: 0.65,
+      dynamics: 0.48,
+      brightness: 0.99,
+      roughness: 0.96,
+      sharpness: 0.67,
+      rhythm: 0.66,
+      sustain: 0.35,
+      tonality: 0.02,
     },
   },
   {
@@ -67,43 +72,43 @@ export const soundTypes = [
   },
   {
     id: 'liquid',
+    onomatopoeia: '咻咻咻',
     color: '#4fc3f7',
     name: '湯汁流動',
     nameEn: 'Liquid',
     emoji: '💧',
-    tryThis: '咕嚕咕嚕、吸麵條的聲音',
-    description: '有起伏的流動感，濕潤而低沉。吸吮、倒湯、滾水。',
+    tryThis: '咻——咻——咻（高頻送氣）',
+    description: '連續的高頻摩擦氣音，像吸麵條、湯汁滑過。',
     profile: {
       loudness: 0.7,
-      dynamics: 0.6,
-      brightness: 0.85,
-      roughness: 0.8,
-      sharpness: 0.45,
-      rhythm: 0.05,
-      attack: 0.25,
-      sustain: 0.5,
-      tonality: 0.05,
+      dynamics: 0.42,
+      brightness: 0.98,
+      roughness: 0.95,
+      sharpness: 0.8,
+      rhythm: 0.2,
+      sustain: 0.46,
+      tonality: 0.02,
     },
   },
   {
     id: 'soft',
+    onomatopoeia: '哈哈哈',
     color: '#f5b7c8',
     name: '柔軟綿密',
     nameEn: 'Soft',
     emoji: '☁️',
-    tryThis: '嗯～（輕輕哼一個低音）',
-    description: '幾乎沒有雜訊的輕柔聲，鬆軟、平穩、不刺耳。',
+    tryThis: '哈哈哈（放開喉嚨笑出聲）',
+    description: '帶明確音高的濁音，鬆軟、有溫度、一段一段的。',
     profile: {
-      loudness: 0.5,
-      dynamics: 0.05,
-      pitch: 0.3,
-      brightness: 0.1,
-      roughness: 0.05,
-      sharpness: 0.05,
-      rhythm: 0.05,
-      attack: 0.0,
-      sustain: 0.95,
-      tonality: 0.9,
+      loudness: 0.27,
+      dynamics: 0.38,
+      pitch: 0.22,
+      brightness: 0.76,
+      roughness: 0.38,
+      sharpness: 0.21,
+      rhythm: 0.23,
+      sustain: 0.21,
+      tonality: 0.71,
     },
   },
   {
@@ -164,7 +169,7 @@ export function soundTypesAsMatchItems(onlyIds) {
     name: t.name,
     profile: t.profile,
     description: t.description,
-    meta: { emoji: t.emoji, nameEn: t.nameEn, tryThis: t.tryThis, color: t.color },
+    meta: { emoji: t.emoji, nameEn: t.nameEn, tryThis: t.tryThis, color: t.color, onomatopoeia: t.onomatopoeia },
   }));
 }
 

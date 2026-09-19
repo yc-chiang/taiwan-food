@@ -36,13 +36,15 @@ import { DEFAULT_WEIGHTS } from '../match/feature-space.js';
  */
 export const foods = [
   // ── 1 · 溫暖療癒 ──────────────────────────────────────────
-  { id: 'beef-noodle-soup', stage: 'assets/foods/beef-noodle-soup.jpg', sound: 'liquid',  name: '牛肉麵',   nameEn: 'Taiwanese Beef Noodle Soup', group: 1, emoji: '🍜', image: null, asmr: '吸麵條、湯汁滾動',       profile: null },
+  { id: 'beef-noodle-soup', stage: 'assets/foods/beef-noodle-soup.jpg', sound: 'liquid',  name: '牛肉麵',   nameEn: 'Taiwanese Beef Noodle Soup', group: 1, emoji: '🍜', image: null, asmr: '咻咻咻——吸麵條、湯汁滾動',       profile: null },
   { id: 'braised-pork-rice', stage: 'assets/foods/braised-pork-rice.jpg', sound: 'soft', name: '滷肉飯',   nameEn: 'Braised Pork Rice',          group: 1, emoji: '🍚', image: null, asmr: '湯匙刮碗、黏稠拌攪',     profile: null },
   { id: 'oyster-vermicelli', stage: 'assets/foods/oyster-vermicelli.jpg', sound: 'liquid', name: '蚵仔麵線', nameEn: 'Oyster Vermicelli',          group: 1, emoji: '🍲', image: null, asmr: '濃稠羹湯、小口吸食',     profile: null },
   { id: 'danzai-noodles', stage: 'assets/foods/danzai-noodles.jpg', sound: 'liquid',    name: '擔仔麵',   nameEn: 'Danzai Noodles',             group: 1, emoji: '🍜', image: null, asmr: '小碗輕碰、清湯',         profile: null },
 
   // ── 2 · 溫馨相聚 ──────────────────────────────────────────
-  { id: 'soup-dumplings', stage: 'assets/foods/soup-dumplings.jpg', sound: 'liquid',    name: '小籠包',   nameEn: 'Soup Dumplings',             group: 2, emoji: '🥟', image: null, asmr: '咬破麵皮、吸湯汁',       profile: null },
+  // 原本歸「湯汁流動」，但牛肉麵才是那一型最典型的代表；兩道同型就分不開，
+  // 所以小籠包改走蒸籠與鬆軟麵皮的悶聲。
+  { id: 'soup-dumplings', stage: 'assets/foods/soup-dumplings.jpg', sound: 'soft',    name: '小籠包',   nameEn: 'Soup Dumplings',             group: 2, emoji: '🥟', image: null, asmr: '哈哈哈——蒸籠掀蓋的暖氣',     profile: null },
   { id: 'pork-belly-bun', stage: 'assets/foods/pork-belly-bun.jpg', sound: 'soft',    name: '刈包',     nameEn: 'Taiwanese Pork Belly Bun',   group: 2, emoji: '🥪', image: null, asmr: '鬆軟麵皮、花生粉',       profile: null },
   { id: 'three-cup-chicken', stage: 'assets/foods/three-cup-chicken.jpg', sound: 'sizzling', name: '三杯雞',   nameEn: 'Three-Cup Chicken',          group: 2, emoji: '🍗', image: null, asmr: '砂鍋翻炒、九層塔下鍋',   profile: null },
   { id: 'taiwanese-sausage', stage: 'assets/foods/taiwanese-sausage.jpg', sound: 'sizzling', name: '台灣香腸', nameEn: 'Taiwanese Sausage',          group: 2, emoji: '🌭', image: null, asmr: '炭烤滋滋、咬下爆汁',     profile: null },
@@ -60,7 +62,8 @@ export const foods = [
   { id: 'iron-eggs', stage: 'assets/foods/iron-eggs.jpg', sound: 'chewy',         name: '鐵蛋',     nameEn: 'Iron Eggs',                  group: 4, emoji: '🥚', image: null, asmr: '硬韌咀嚼、緊實有嚼勁',   profile: null },
 
   // ── 5 · 甜蜜夢幻 ──────────────────────────────────────────
-  { id: 'pineapple-cake', stage: 'assets/foods/pineapple-cake.jpg', sound: 'grainy',    name: '鳳梨酥',   nameEn: 'Pineapple Cake',             group: 5, emoji: '🍍', image: null, asmr: '拆紙盒、酥鬆碎屑',       profile: null },
+  // 「酥」本來就是脆；歸到酥脆也呼應站名「嘎脆嘣」
+  { id: 'pineapple-cake', stage: 'assets/foods/pineapple-cake.jpg', sound: 'crispy',    name: '鳳梨酥',   nameEn: 'Pineapple Cake',             group: 5, emoji: '🍍', image: null, asmr: '喀滋喀滋——咬碎酥皮',       profile: null },
   { id: 'taro-balls', stage: 'assets/foods/taro-balls.jpg', sound: 'chewy',        name: '芋圓',     nameEn: 'Taro Balls',                 group: 5, emoji: '🍡', image: null, asmr: 'Q 彈咀嚼、冰塊碰撞',     profile: null },
   { id: 'shaved-ice', stage: 'assets/foods/shaved-ice.jpg', sound: 'grainy',        name: '刨冰',     nameEn: 'Taiwanese Shaved Ice',       group: 5, emoji: '🍧', image: null, asmr: '刨冰機沙沙、湯匙挖冰',   profile: null },
   { id: 'wheel-cake', stage: 'assets/foods/wheel-cake.jpg', sound: 'soft',        name: '車輪餅',   nameEn: 'Wheel Cake',                 group: 5, emoji: '🥮', image: null, asmr: '烤模扣出、綿密內餡',     profile: null },
@@ -77,7 +80,11 @@ export const foods = [
  * 比對會自動收斂到「這些食物所屬的聲音型態」之間 ——
  * 所以不管使用者發出什麼聲音，結果一定落在保留的食物裡，不會判到空的型態。
  */
-export const activeFoodIds = [];
+export const activeFoodIds = [
+  'beef-noodle-soup',   // 牛肉麵 → 湯汁流動
+  'soup-dumplings',     // 小籠包 → 柔軟綿密
+  'pineapple-cake',     // 鳳梨酥 → 酥脆
+];
 
 /** 目前參與比對與呈現的食物。 */
 export function activeFoods() {
