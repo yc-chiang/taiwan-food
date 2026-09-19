@@ -71,12 +71,16 @@
 
     /* 有專屬舞台圖時，食物本身已經畫在圖裡了，
        這裡只留文字並讓到下方，不要蓋住胃部 */
-    .reveal.with-stage{top:auto;bottom:74px;transform:translate(-50%,0) scale(.9);padding:16px 30px 18px}
+    .reveal.with-stage{top:62px;bottom:auto;transform:translate(-50%,-6px) scale(.94);padding:14px 30px 16px}
     .reveal.with-stage.show{transform:translate(-50%,0) scale(1)}
     .reveal.with-stage .ring{display:none}
-    .reveal.with-stage:before{inset:-14px -10px;border-radius:26px;
-      background:linear-gradient(180deg,transparent,rgba(3,1,8,.82) 26%,rgba(3,1,8,.9))}
-    .reveal.with-stage .name{font-size:29px}
+    .reveal.with-stage:before{inset:-10px -14px;border-radius:22px;
+      background:radial-gradient(ellipse at center,rgba(3,1,8,.92) 42%,rgba(3,1,8,.7) 70%,transparent 92%);
+      -webkit-backdrop-filter:blur(7px) saturate(.72);backdrop-filter:blur(7px) saturate(.72)}
+    .reveal.with-stage .name{font-size:27px}
+    .reveal.with-stage .type{margin-bottom:5px}
+    .reveal.with-stage .en{margin-top:3px}
+    .reveal.with-stage .sub{margin-top:9px;padding-top:8px}
 
     /* 舞台上的食物揭示卡（定位在胃部中央） */
     .reveal{position:absolute;left:50%;top:62%;transform:translate(-50%,-50%) scale(.82);z-index:4;text-align:center;opacity:0;pointer-events:none;transition:opacity .5s ease,transform .6s cubic-bezier(.34,1.56,.64,1);padding:26px 34px 30px;isolation:isolate}
@@ -193,6 +197,10 @@ const state = {
 const app = createFoodVoiceMatcher({
   vad: { enabled: false },
   recording: { maxDurationMs: 15000 },
+  // 上一次給過的答案會被排到後面，所以連續兩次一定是不同的食物。
+  // 設 1（而不是 2）是刻意的：只擋住「剛剛那道」，
+  // 剩下兩道仍然由聲音決定 —— 設 2 會變成固定輪播，聲音就失去意義了。
+  match: { cooldownRounds: 1 },
 });
 const granularity = matchGranularity();
 // 只把「還有食物的聲音型態」放進比對，任何聲音都必然落在有食物的型態上
