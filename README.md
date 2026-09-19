@@ -1,4 +1,4 @@
-# taiwan-food
+# taiwan-food · 嘎脆嘣
 
 用聲音找出最接近的台灣經典食物 —— 互動邏輯與裝置連接層。
 
@@ -56,7 +56,7 @@ assets/
 
 tools/build-single.py         打包成單一 HTML（資產全內嵌）
 
-index.html                    主介面「島嶼味覺聲場」
+index.html                    主介面「嘎脆嘣」
 dev/simple-test.html          早期的極簡測試介面
 dev/harness.html              工程除錯台
 docs/INTEGRATION.md           串接說明與資料格式

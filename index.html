@@ -4,8 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#090615" />
-  <meta name="description" content="以台灣食物聲音驅動的霓虹熱感人體互動介面。" />
-  <title>島嶼味覺聲場｜Sonic Digest</title>
+  <meta name="description" content="嘎脆嘣：以台灣食物聲音驅動的霓虹熱感人體互動介面。" />
+  <title>嘎脆嘣</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23090615'/%3E%3Cpath d='M9 8c4 3 4 13 7 16 3-3 3-13 7-16' fill='none' stroke='%23ff3bd4' stroke-width='3' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='22' r='4' fill='%2300f0ff'/%3E%3C/svg%3E" />
   <style>
     :root{--bg:#07040f;--panel:rgba(19,10,36,.76);--line:rgba(141,118,255,.25);--pink:#ff35cf;--cyan:#17f7ff;--violet:#7937ff;--lime:#d4ff36;--text:#f5efff;--muted:#a397ba;--hot:#ff5b2e}
@@ -109,7 +109,7 @@
 <body>
 <div class="shell" id="app">
   <header>
-    <div class="brand"><div class="mark">味</div><div><h1>島嶼味覺聲場</h1><p>SONIC DIGEST · TAIWAN</p></div></div>
+    <div class="brand"><div class="mark">嘎</div><div><h1>嘎脆嘣</h1><p>GA CUI BENG · TAIWAN</p></div></div>
     <div class="live" id="live"><span class="dot"></span><span id="liveText">等待聲音輸入</span><button id="bgmBtn" data-on="false" aria-label="背景音樂開關" title="背景音樂">♪</button></div>
   </header>
   <main>
@@ -161,7 +161,7 @@
 <div class="toast" id="toast" role="status"></div>
 <script type="module">
 /**
- * 島嶼味覺聲場 —— 前端視覺（原作）× 聲音比對引擎（src/）整合版
+ * 嘎脆嘣 —— 前端視覺（原作）× 聲音比對引擎（src/）整合版
  *
  * 視覺、版面、動畫沿用原始設計；音訊層整個換成 src/ 底下的引擎：
  *   原本：MediaRecorder 錄音 + 平均音量，不做任何分析，特徵鈕是手動切換
