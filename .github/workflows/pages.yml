@@ -1,0 +1,50 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: ['claude/brave-dirac-6rbzp4']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同時只跑一個部署，但不取消進行中的，避免半途中斷留下壞掉的站
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 組出要發布的檔案
+        run: |
+          mkdir -p _site/assets/foods _site/src
+          cp index.html _site/
+          cp -r src/. _site/src/
+          # 只帶網頁實際用到的資產。
+          # assets/*.png 是原始大圖（各約 3MB），頁面讀的是壓縮後的 .jpg，不需要上傳。
+          cp assets/bgm.mp3 assets/esophagus.jpg assets/stomach.jpg _site/assets/
+          cp assets/foods/*.jpg _site/assets/foods/
+          # 關掉 Jekyll，否則底線開頭的檔案會被吃掉
+          touch _site/.nojekyll
+          du -sh _site
+
+      # enablement: true —— 這個 repo 還沒開 Pages 的話會自動開起來
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
