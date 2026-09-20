@@ -37,14 +37,27 @@ jobs:
           touch _site/.nojekyll
           du -sh _site
 
-      # enablement: true —— 這個 repo 還沒開 Pages 的話會自動開起來
-      - uses: actions/configure-pages@v5
-        with:
-          enablement: true
+      # 注意：不能用 enablement: true 自動開啟 Pages ——
+      # Actions 的預設 GITHUB_TOKEN 沒有建立 Pages 站台的權限，
+      # 一定會收到 "Resource not accessible by integration"。
+      # Pages 必須先由 repo 擁有者在 Settings → Pages 開啟並把 Source 設為 GitHub Actions。
+      #
+      # continue-on-error + 後續條件判斷：若 Pages 尚未設定成 Actions 來源，
+      # 這個 workflow 會安靜跳過而不是每次推送都留一個失敗紀錄。
+      - id: pages
+        uses: actions/configure-pages@v5
+        continue-on-error: true
 
-      - uses: actions/upload-pages-artifact@v3
+      - if: steps.pages.outcome == 'success'
+        uses: actions/upload-pages-artifact@v3
         with:
           path: _site
 
       - id: deployment
+        if: steps.pages.outcome == 'success'
         uses: actions/deploy-pages@v4
+
+      - if: steps.pages.outcome != 'success'
+        run: |
+          echo "::notice::Pages 尚未啟用，或 Source 不是 GitHub Actions，已略過部署。"
+          echo "請到 Settings → Pages，將 Source 設為 GitHub Actions 後重跑此 workflow。"
